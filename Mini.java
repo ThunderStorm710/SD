@@ -8,7 +8,7 @@ import java.util.StringTokenizer;
 
 public class Mini {
     public static void main(String args[]) {
-        String url = args[0];
+        String url = "http://agenda.uc.pt/#1499291250453-6f7110a3-74a5";
         try {
             Document doc = Jsoup.connect(url).get();
             StringTokenizer tokens = new StringTokenizer(doc.text());
