@@ -5,11 +5,11 @@ import java.rmi.registry.Registry;
 import java.rmi.server.*;
 
 
+
 public class FilaURL extends UnicastRemoteObject implements FilaURL_I{
 
 
     private ArrayList<String> urlList;
-
     public FilaURL() throws RemoteException {
         super();
         this.urlList = new ArrayList<String>();
