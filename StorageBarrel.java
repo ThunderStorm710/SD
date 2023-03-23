@@ -127,10 +127,15 @@ public class StorageBarrel implements Runnable {
         }
     }
 
+    public HashSet<String[]> obterInfoBarrel(String palavra) throws RemoteException {
+        return index.get(palavra);
+    }
+
+
     public static void main(String[] args) {
         StorageBarrel s1 = new StorageBarrel();
         //StorageBarrel s2 = new StorageBarrel();
-        if (args.length != 2){
+        if (args.length != 2) {
             System.out.println("StorageBarrel <GAMA DA PALAVRAS> <PORTO>");
             return;
         }

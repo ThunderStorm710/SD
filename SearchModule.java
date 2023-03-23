@@ -41,7 +41,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
                     for (Storage s: barrels) {
                         if (palavra.charAt(0) >= s.getGama().charAt(0) && palavra.charAt(0) <= s.getGama().charAt(2)){
                             StorageBarrel_I sI = (StorageBarrel_I) LocateRegistry.getRegistry(s.getPorto()).lookup("Storage_Barrel");
-                            sI.obterInfoBarrel();
+                            sI.obterInfoBarrel(palavra);
                         }
                     }
                     System.out.println(palavra);
