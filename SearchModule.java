@@ -10,6 +10,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
 
 
     private ArrayList<ClienteInfo> clientes;
+    private ArrayList<Storage> barrels;
 
     public SearchModule() throws RemoteException {
         super();
@@ -37,6 +38,12 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
                 String[] palavras = pesquisa.split(" ");
                 System.out.println("--- PESQUISA ---");
                 for (String palavra : palavras) {
+                    for (Storage s: barrels) {
+                        if (palavra.charAt(0) >= s.getGama().charAt(0) && palavra.charAt(0) <= s.getGama().charAt(2)){
+                            StorageBarrel_I sI = (StorageBarrel_I) LocateRegistry.getRegistry(s.getPorto()).lookup("Storage_Barrel");
+                            sI.obterInfoBarrel();
+                        }
+                    }
                     System.out.println(palavra);
 
                 }
@@ -72,11 +79,10 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
             }
         }
         if (flag) {
-            System.out.println("meh");
             c1 = new ClienteInfo(nome, username, email, password);
             clientes.add(c1);
             escreverFichObjetos();
-            System.out.println("Inscrição validada com sucesso!");
+            System.out.println("Inscricao validada com sucesso!");
             System.out.println("Seja bem-vindo, " + nome + "!!\n");
 
         }
@@ -132,15 +138,31 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
 
     }
 
+    public boolean adicionarInfoInicialBarrel(String gama, String porto) throws RemoteException {
+        boolean flag = true;
+        if (gama.length() != 3) {
+            flag = false;
+        } else if ((gama.startsWith("A") && !gama.endsWith("M")) || (gama.startsWith("N") || !gama.endsWith("Z"))) {
+            flag = false;
+        } else {
+            for (Storage s : barrels) {
+                if (s.getPorto().equals(porto)) {
+                    flag = false;
+                }
+            }
+            if (flag) {
+                barrels.add(new Storage(gama, porto));
+            }
+        }
+        return flag;
+    }
+
+
     public static void main(String[] args) {
 
         try {
             SearchModule sM = new SearchModule();
             sM.lerFichClientes();
-            for (ClienteInfo c : sM.clientes) {
-                System.out.println(c.getNome());
-
-            }
 
             Registry r = LocateRegistry.createRegistry(1100);
             r.rebind("Search_Module", sM);

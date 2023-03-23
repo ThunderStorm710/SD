@@ -2,17 +2,19 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.rmi.registry.LocateRegistry;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.rmi.RemoteException;
 
-public class StorageBarrel implements Runnable{
+public class StorageBarrel implements Runnable {
     File fClientesObj;
-    HashMap< String, HashSet<String[]>> index ;
+    HashMap<String, HashSet<String[]>> index;
     Thread t;
+
     public StorageBarrel() {
-        t = new Thread( this);
+        t = new Thread(this);
         this.index = new HashMap<>();
         this.fClientesObj = new File("fich_urls");
         t.start();
@@ -35,7 +37,7 @@ public class StorageBarrel implements Runnable{
                 ByteArrayInputStream bais = new ByteArrayInputStream(packet.getData());
                 ObjectInputStream ois = new ObjectInputStream(bais);
                 ArrayList<String> receivedList = (ArrayList<String>) ois.readObject();
-                for(String cona: receivedList){
+                for (String cona : receivedList) {
                     System.out.println(cona);
                 }
                 escreverFichObjetos(receivedList);
@@ -68,18 +70,17 @@ public class StorageBarrel implements Runnable{
                     HashSet<String[]> values = new HashSet<>();
                     values.add(valores);
                     index.put(palavra, values);
-                }
-                else{
+                } else {
                     HashSet<String[]> v = index.get(palavra);
                     int flag = 0;
-                    for(String[] va : v){
+                    for (String[] va : v) {
                         //System.out.println(va[0] + " " + va[1]);
-                        if (va[0].equals(valores[0])){
+                        if (va[0].equals(valores[0])) {
                             flag = 1;
                             break;
                         }
                     }
-                    if (flag == 0){
+                    if (flag == 0) {
                         index.get(palavra).add(valores);
                     }
                     //System.out.println("++++");
@@ -95,11 +96,11 @@ public class StorageBarrel implements Runnable{
     public void lerFichObjetos() {
 
         if (fClientesObj.exists()) {
-            HashMap< String, HashSet<String[]>> palavras ;
+            HashMap<String, HashSet<String[]>> palavras;
             try {
                 FileInputStream fIS = new FileInputStream(fClientesObj);
                 ObjectInputStream oIS = new ObjectInputStream(fIS);
-                palavras = (HashMap< String, HashSet<String[]>>)oIS.readObject();
+                palavras = (HashMap<String, HashSet<String[]>>) oIS.readObject();
                 oIS.close();
                 for (String key : palavras.keySet()) {
                     System.out.println("Key: " + key);
@@ -107,10 +108,10 @@ public class StorageBarrel implements Runnable{
                     // Access the values associated with the current key
                     HashSet<String[]> values = palavras.get(key);
                     System.out.print("Values:[");
-                    for(String[] val :values) {
-                        System.out.print ("[");
-                        for( String v: val) {
-                            System.out.print (v+" ,");
+                    for (String[] val : values) {
+                        System.out.print("[");
+                        for (String v : val) {
+                            System.out.print(v + " ,");
                         }
                         System.out.println("]");
                     }
@@ -126,16 +127,23 @@ public class StorageBarrel implements Runnable{
         }
     }
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         StorageBarrel s1 = new StorageBarrel();
         //StorageBarrel s2 = new StorageBarrel();
+        if (args.length != 2){
+            System.out.println("StorageBarrel <GAMA DA PALAVRAS> <PORTO>");
+            return;
+        }
 
         try {
-
+            SearchModule_I h = (SearchModule_I) LocateRegistry.getRegistry(1100).lookup("Search_Module");
+            if (!h.adicionarInfoInicialBarrel(args[0], args[1])) {
+                return;
+            }
             s1.t.join();
             //s2.t.join();
 
-        } catch(InterruptedException e) {
+        } catch (InterruptedException | RemoteException | java.rmi.NotBoundException e) {
             System.out.println("Interrupted");
         }
     }

@@ -9,4 +9,6 @@ public interface SearchModule_I extends Remote {
 
     public ClienteInfo verificarRegisto(String nome, String email, String username, String password) throws RemoteException;
 
+    public boolean adicionarInfoInicialBarrel(String gama, String porto) throws RemoteException;
+
 }
