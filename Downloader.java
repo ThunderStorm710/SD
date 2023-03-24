@@ -47,7 +47,7 @@ public class Downloader implements Runnable{
                     StringTokenizer tokens = new StringTokenizer(doc.text());
                     int countTokens = 0;
                     while (tokens.hasMoreElements() && countTokens++ < 100) {
-                        System.out.println(tokens.nextToken().toLowerCase());
+                        //System.out.println(tokens.nextToken().toLowerCase());
                         String tok = tokens.nextToken().toLowerCase();
                         lista.add(tok);
                     }
