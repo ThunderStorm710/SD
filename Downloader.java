@@ -2,6 +2,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -12,9 +15,10 @@ import java.net.MulticastSocket;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
+
 public class Downloader implements Runnable{
-    private String MULTICAST_ADDRESS = "224.3.2.1";
-    private int PORT = 4321;
+    private final String MULTICAST_ADDRESS = "224.3.2.1";
+    private final int PORT = 4321;
 
     Thread t;
     public Downloader() {
@@ -29,53 +33,61 @@ public class Downloader implements Runnable{
             socket = new MulticastSocket();
             while(true){
 
-                //String message = this.getName() + " packet " + counter++;
-                //byte[] buffer = message.getBytes();
-
                 String url = h.sendUrl();
+                URL url_test = new URL(url);
+                HttpURLConnection connection = (HttpURLConnection) url_test.openConnection();
+                connection.setRequestMethod("HEAD");
+                int responseCode = connection.getResponseCode();
+                if (responseCode != HttpURLConnection.HTTP_OK) {
+                    System.out.println("O URL não pode ser alcançado. Código de resposta HTTP: " + responseCode);
 
-                ArrayList<String> lista = new ArrayList<String>();
+                }
+                else {
 
-                if (url != null) {
-                    System.out.println(url);
-                    Document doc = Jsoup.connect(url).get();
-                    String title = doc.title();
+                    ArrayList<String> lista = new ArrayList<>();
 
-                    lista.add(url);
-                    lista.add(title);
+                    if (url != null) {
+                        System.out.println(url);
+                        Document doc = Jsoup.connect(url).ignoreHttpErrors(true).get();
+                        String title = doc.title();
+                        Element firstParagraph = doc.selectFirst("p:first-of-type");
+                        lista.add(url);
+                        lista.add(title);
+                        lista.add(firstParagraph.text());
 
-                    StringTokenizer tokens = new StringTokenizer(doc.text());
-                    int countTokens = 0;
-                    while (tokens.hasMoreElements() && countTokens++ < 100) {
-                        //System.out.println(tokens.nextToken().toLowerCase());
-                        String tok = tokens.nextToken().toLowerCase();
-                        lista.add(tok);
-                    }
-                    System.out.println("++++++++++++");
-                    for (String numero : lista) {
-                        System.out.println(numero);
-                    }
-                    System.out.println("++++++++++++");
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    ObjectOutputStream oos = new ObjectOutputStream(baos);
-                    oos.writeObject(lista);
-                    byte[] serializedData = baos.toByteArray();
+                        StringTokenizer tokens = new StringTokenizer(doc.text());
+                        int countTokens = 0;
+                        while (tokens.hasMoreElements() && countTokens++ < 100) {
+                            //System.out.println(tokens.nextToken().toLowerCase());
+                            String tok = tokens.nextToken().toLowerCase().replaceAll("[,.\\[\\]{}!?:;()<>+*/%]", "");
+                            lista.add(tok);
+                        }
+                        System.out.println("++++++++++++");
+                        for (String numero : lista) {
+                            System.out.println(numero);
+                        }
+                        System.out.println("++++++++++++");
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        ObjectOutputStream oos = new ObjectOutputStream(baos);
+                        oos.writeObject(lista);
+                        byte[] serializedData = baos.toByteArray();
 
-                    InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
-                    DatagramPacket packet = new DatagramPacket(serializedData, serializedData.length, group, PORT);
+                        InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
+                        DatagramPacket packet = new DatagramPacket(serializedData, serializedData.length, group, PORT);
 
-                    socket.send(packet);
+                        socket.send(packet);
 
 
-                    Elements links = doc.select("a[href]");
-                    for (Element link : links) {
-                        //System.out.println( link.attr("abs:href") );
-                        h.recUrl(link.attr("abs:href"));
+                        Elements links = doc.select("a[href]");
+                        for (Element link : links) {
+                            //System.out.println( link.attr("abs:href") );
+                            h.recUrl(link.attr("abs:href"));
+                        }
                     }
                 }
 
             }
-        } catch (Exception e ) {
+        } catch (IOException | NotBoundException e ) {
             e.printStackTrace();
         } finally {
             socket.close();

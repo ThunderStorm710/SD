@@ -32,7 +32,6 @@ public class StorageBarrel implements Runnable {
 
     public void run() {
         LerArquivoTexto();
-
         if(type_t == 0) {
             MulticastSocket socket = null;
             String MULTICAST_ADDRESS = "224.3.2.1";
@@ -55,7 +54,6 @@ public class StorageBarrel implements Runnable {
                     }
                     escreverFichObjetos(receivedList);
                     lerFichObjetos();
-                    //System.out.println(message);
 
                 }
             } catch (
@@ -80,18 +78,19 @@ public class StorageBarrel implements Runnable {
     public void escreverFichObjetos(ArrayList<String> receivedList) {
         String titulo = receivedList.get(1);
         String url = receivedList.get(0);
+        String citacao = receivedList.get(2);
         receivedList.remove(0);
         receivedList.remove(1);
+        receivedList.remove(2);
         try {
             FileOutputStream iOS = new FileOutputStream(fClientesObj);
             ObjectOutputStream oOS = new ObjectOutputStream(iOS);
             for (String palavra : receivedList) {
                 // Cria um array de valores
-                String[] valores = {url, titulo};
+                String[] valores = {url, titulo, citacao};
                 String p_ascii = Normalizer.normalize(palavra, Normalizer.Form.NFD);
 
-                System.out.println(!stopwords.contains("e")+" "+palavra);
-                if(!stopwords.contains(palavra) && Character.toLowerCase(p_ascii.charAt(0)) >= Character.toLowerCase(gama_palavra.charAt(1)) && Character.toLowerCase(p_ascii.charAt(0)) <= Character.toLowerCase(gama_palavra.charAt(3)) ) {
+                if(!palavra.equals("") && !stopwords.contains(palavra) && Character.toLowerCase(p_ascii.charAt(0)) >= Character.toLowerCase(gama_palavra.charAt(1)) && Character.toLowerCase(p_ascii.charAt(0)) <= Character.toLowerCase(gama_palavra.charAt(3)) ) {
                     if (!index.containsKey(palavra)) {
                         // Se não existir, cria um novo conjunto de valores
                         HashSet<String[]> values = new HashSet<>();
@@ -165,8 +164,8 @@ public class StorageBarrel implements Runnable {
         try (BufferedReader leitor = new BufferedReader(new FileReader(nomeArquivo))) {
             String linha;
             while ((linha = leitor.readLine()) != null) {
+                linha = linha.replace(" ", "");
                 stopwords.add(new String(linha.getBytes(), StandardCharsets.UTF_8));
-                //stopwords.add(linha);
             }
         } catch (IOException e) {
             System.out.println("Erro ao ler o arquivo: " + e.getMessage());
