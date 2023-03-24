@@ -4,6 +4,8 @@ import java.rmi.*;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.*;
+import java.util.HashSet;
+import java.util.List;
 
 
 public class SearchModule extends UnicastRemoteObject implements SearchModule_I {
@@ -32,28 +34,67 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
         }
     }
 
-    synchronized public void pesquisarPaginas(ClienteInfo cliente, String pesquisa) throws RemoteException {
+    synchronized public HashSet<String[]> pesquisarPaginas(ClienteInfo cliente, String pesquisa) throws RemoteException {
+        ArrayList<HashSet<String[]>> lista = new ArrayList<>();
+        HashSet<String[]> aux;
         if (verificarCliente(cliente)) {
             try {
                 String[] palavras = pesquisa.split(" ");
                 System.out.println("--- PESQUISA ---");
                 for (String palavra : palavras) {
-                    for (Storage s: barrels) {
-                        if (palavra.charAt(0) >= s.getGama().charAt(0) && palavra.charAt(0) <= s.getGama().charAt(2)){
+                    for (Storage s : barrels) {
+                        if (palavra.charAt(0) >= s.getGama().charAt(0) && palavra.charAt(0) <= s.getGama().charAt(2)) {
                             StorageBarrel_I sI = (StorageBarrel_I) LocateRegistry.getRegistry(s.getPorto()).lookup("Storage_Barrel");
-                            sI.obterInfoBarrel(palavra);
+                            aux = sI.obterInfoBarrel(palavra);
+                            lista.add(aux);
+                            System.out.println(aux);
+
                         }
                     }
                     System.out.println(palavra);
 
                 }
+
                 System.out.println("--- FIM PESQUISA ---");
+                return intersection(lista);
 
             } catch (Exception e) {
                 System.out.println("Error" + e);
             }
         }
+        return null;
     }
+
+    public static HashSet<String[]> intersection(ArrayList<HashSet<String[]>> sets) {
+        // passo 1
+        HashSet<String> allLinks = new HashSet<>();
+        for (String[] set : sets.get(0)) {
+            allLinks.add(set[0]);
+        }
+
+        // passo 2
+        for (int i = 1; i < sets.size(); i++) {
+            HashSet<String[]> currentSet = sets.get(i);
+            HashSet<String> currentLinks = new HashSet<>();
+            for (String[] set : currentSet) {
+                currentLinks.add(set[0]);
+            }
+            allLinks.retainAll(currentLinks); // passo 3
+        }
+
+        // passo 4
+        HashSet<String[]> result = new HashSet<>();
+
+        // passo 5
+        for (String[] set : sets.get(0)) {
+            if (allLinks.contains(set[0])) {
+                result.add(set);
+            }
+        }
+
+        return result; // passo 6
+    }
+
 
     synchronized public boolean verificarCliente(ClienteInfo cliente) {
 
