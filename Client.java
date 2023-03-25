@@ -1,7 +1,5 @@
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Scanner;
 
 public class Client implements Runnable {
@@ -125,15 +123,15 @@ public class Client implements Runnable {
                 }
 
             }
-            if (entrada) {
+            if (entrada){
                 while (true) {
                     System.out.println("""
-                            --- BEM-VINDO ---
-                            Que operacao deseja realizar?
-                            1 - Indexar novo URL
-                            2 - Pesquisar
-                            3 - Sair
-                            """);
+                        --- BEM-VINDO ---
+                        Que operacao deseja realizar?
+                        1 - Indexar novo URL
+                        2 - Pesquisar
+                        3 - Sair
+                        """);
                     opcao = sc.nextLine();
                     if (opcao.length() != 1) {
                         System.out.println("Opcao invalida...");
@@ -143,11 +141,7 @@ public class Client implements Runnable {
 
                     } else if (opcao.equals("2")) {
                         linha = sc.nextLine();
-                        HashSet<String[]> paginas = h.pesquisarPaginas(cliente, linha);
-                        for (String[] pagina : paginas) {
-                            System.out.println(pagina[0] + " ---> " + pagina[1]);
-
-                        }
+                        h.pesquisarPaginas(cliente, linha);
                     } else if (opcao.equals("3")) {
                         break;
 
