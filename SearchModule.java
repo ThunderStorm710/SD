@@ -19,7 +19,9 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
 
 
     synchronized public void indexarURL(ClienteInfo cliente, String url) throws RemoteException {
+
         if (verificarCliente(cliente)) {
+
             try {
                 FilaURL_I h = (FilaURL_I) LocateRegistry.getRegistry(1099).lookup("fila_url");
                 h.recUrl(url);
@@ -58,7 +60,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
     synchronized public boolean verificarCliente(ClienteInfo cliente) {
 
         for (ClienteInfo c : clientes) {
-            if (cliente == c) {
+            if (cliente.getNome().equals(c.getNome())) {
                 return true;
             }
         }

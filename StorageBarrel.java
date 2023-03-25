@@ -100,7 +100,6 @@ public class StorageBarrel implements Runnable {
                         HashSet<String[]> v = index.get(palavra);
                         int flag = 0;
                         for (String[] va : v) {
-                            //System.out.println(va[0] + " " + va[1]);
                             if (va[0].equals(valores[0])) {
                                 flag = 1;
                                 break;

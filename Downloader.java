@@ -15,7 +15,6 @@ import java.net.MulticastSocket;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
-
 public class Downloader implements Runnable{
     private final String MULTICAST_ADDRESS = "224.3.2.1";
     private final int PORT = 4321;
@@ -50,14 +49,20 @@ public class Downloader implements Runnable{
                         System.out.println(url);
                         Document doc = Jsoup.connect(url).ignoreHttpErrors(true).get();
                         String title = doc.title();
+
                         Element firstParagraph = doc.selectFirst("p:first-of-type");
+
                         lista.add(url);
                         lista.add(title);
-                        lista.add(firstParagraph.text());
+
+                        if (firstParagraph != null){
+                            lista.add(firstParagraph.text());
+                        }
+
 
                         StringTokenizer tokens = new StringTokenizer(doc.text());
                         int countTokens = 0;
-                        while (tokens.hasMoreElements() && countTokens++ < 100) {
+                        while (tokens.hasMoreElements() && countTokens++ < 1000) {
                             //System.out.println(tokens.nextToken().toLowerCase());
                             String tok = tokens.nextToken().toLowerCase().replaceAll("[,.\\[\\]{}!?:;()<>+*/%]", "");
                             lista.add(tok);
