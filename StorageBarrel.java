@@ -174,15 +174,15 @@ public class StorageBarrel implements Runnable {
 
 
     public static void main(String[] args) {
-        //if (args.length != 3) {
-         //   System.out.println("StorageBarrel <NOME DO FICHEIRO> <GAMA DA PALAVRAS [a-z]> <PORTO>");
-          //  return;
-        //}
-        //StorageBarrel s1 = new StorageBarrel(args[0],0,args[1],args[2] );
-        StorageBarrel s2 = new StorageBarrel("fich_url1",0,"[a-z]","1000");
+        if (args.length != 3) {
+            System.out.println("StorageBarrel <NOME DO FICHEIRO> <GAMA DA PALAVRAS [a-z]> <PORTO>");
+            return;
+        }
+        StorageBarrel s1 = new StorageBarrel(args[0],0,args[1],args[2] );
+        //StorageBarrel s2 = new StorageBarrel("fich_url1",0,"[a-z]","1000");
         try {
-            //s1.t.join();
-            s2.t.join();
+            s1.t.join();
+            //s2.t.join();
 
         } catch (InterruptedException e) {
             System.out.println("Interrupted");
