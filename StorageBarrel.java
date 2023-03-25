@@ -55,7 +55,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                         System.out.println(l);
                     }
                     escreverFichObjetos(receivedList);
-                    lerFichObjetos();
+                    index = lerFichObjetos();
 
                 }
             } catch (IOException | ClassNotFoundException e) {
@@ -120,10 +120,9 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         }
     }
 
-    public void lerFichObjetos() {
-
+    public HashMap<String, HashSet<String[]>> lerFichObjetos() {
+        HashMap<String, HashSet<String[]>> palavras = null;
         if (fClientesObj.exists()) {
-            HashMap<String, HashSet<String[]>> palavras;
             try {
                 FileInputStream fIS = new FileInputStream(fClientesObj);
                 ObjectInputStream oIS = new ObjectInputStream(fIS);
@@ -152,9 +151,13 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         } else {
             System.out.println("Ficheiro de Objetos não existe...");
         }
+        return palavras;
     }
 
+
+
     public HashSet<String[]> obterInfoBarrel(String palavra) throws RemoteException {
+        index = lerFichObjetos();
         System.out.println("DENTRO DO BARREL");
         System.out.println(index);
         System.out.println("----------------");

@@ -2,25 +2,24 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import java.net.HttpURLConnection;
-import java.net.URL;
+
+import java.net.*;
 import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.net.DatagramPacket;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
-import java.util.ArrayList;
-import java.util.StringTokenizer;
+import java.util.*;
 
 public class Downloader implements Runnable{
+
+    HashMap<String, HashSet<String>> urlsLig;
     private final String MULTICAST_ADDRESS = "224.3.2.1";
     private final int PORT = 4321;
 
     Thread t;
     public Downloader() {
+        this.urlsLig = new HashMap<>();
         t = new Thread(this);
         t.start();
     }
@@ -34,6 +33,7 @@ public class Downloader implements Runnable{
 
                 String url = h.sendUrl();
                 URL url_test = new URL(url);
+
                 HttpURLConnection connection = (HttpURLConnection) url_test.openConnection();
                 connection.setRequestMethod("HEAD");
                 int responseCode = connection.getResponseCode();
@@ -47,6 +47,7 @@ public class Downloader implements Runnable{
 
                     if (url != null) {
                         System.out.println(url);
+
                         Document doc = Jsoup.connect(url).ignoreHttpErrors(true).get();
                         String title = doc.title();
 
@@ -83,11 +84,31 @@ public class Downloader implements Runnable{
 
                         socket.send(packet);
 
-
                         Elements links = doc.select("a[href]");
                         for (Element link : links) {
+                            if (!urlsLig.containsKey(link.attr("abs:href"))) {
+                                HashSet<String> values = new HashSet<>();
+                                values.add(url);
+                                urlsLig.put(link.attr("abs:href"), values);
+                            } else {
+                                HashSet<String> values = urlsLig.get(link.attr("abs:href"));
+                                if (values != null) {
+                                    values.add(url);
+                                    urlsLig.put(link.attr("abs:href"), values);
+                                }
+                            }
+                            // PRINT DO HASHMAP
+                            //System.out.println("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
+                            //for (Map.Entry<String, HashSet<String>> entry : urlsLig.entrySet()) {
+                            //    String key = entry.getKey();
+                            //    HashSet<String> values = entry.getValue();
+                            //    System.out.println("Chave: " + key);
+                            //    System.out.println("Valores: " + values);
+                            //}
+                            //System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
                             //System.out.println( link.attr("abs:href") );
                             h.recUrl(link.attr("abs:href"));
+
                         }
                     }
                 }
