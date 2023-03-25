@@ -15,8 +15,8 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
 
     public SearchModule() throws RemoteException {
         super();
-        this.clientes = new ArrayList<ClienteInfo>();
-        this.barrels = new ArrayList<Storage>();
+        this.clientes = new ArrayList<>();
+        this.barrels = new ArrayList<>();
     }
 
 
@@ -44,11 +44,13 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
                 System.out.println(barrels);
                 for (String palavra : palavras) {
                     for (Storage s : barrels) {
-                        System.out.println(palavra.charAt(0));
-                        System.out.println(s.getGama().charAt(1));
-                        System.out.println(s.getGama().charAt(3));
+                        System.out.println(palavra.charAt(0) +" --- " +s.getGama().charAt(1) + " --- " + s.getGama().charAt(3));
                         if (Character.toUpperCase(palavra.charAt(0)) >= s.getGama().charAt(1) && Character.toUpperCase(palavra.charAt(0)) <= s.getGama().charAt(3)) {
-                            StorageBarrel_I sI = (StorageBarrel_I) LocateRegistry.getRegistry(s.getPorto()).lookup("Storage_Barrel");
+                            System.out.println("Encontrei um barrel");
+                            int porto = Integer.parseInt(s.getPorto());
+                            System.out.println("Porto do barrel = " + porto);
+                            StorageBarrel_I sI = (StorageBarrel_I) LocateRegistry.getRegistry(porto).lookup("Storage_Barrel");
+                            System.out.println("Passei aqui");
                             aux = sI.obterInfoBarrel(palavra);
                             lista.add(aux);
                             System.out.println(aux);
@@ -60,6 +62,9 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
                 }
 
                 System.out.println("--- FIM PESQUISA ---");
+                System.out.println("RESULTADOS DA PESQUISA ANTES DA INTERSEÇÃO");
+                System.out.println(lista);
+                System.out.println("-------------------------------------------");
                 return intersection(lista);
 
             } catch (Exception e) {
@@ -217,6 +222,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
 
             Registry r = LocateRegistry.createRegistry(1100);
             r.rebind("Search_Module", sM);
+
 
 
         } catch (Exception e) {

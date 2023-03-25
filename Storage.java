@@ -1,4 +1,6 @@
-public class Storage {
+import java.io.Serializable;
+
+public class Storage implements Serializable {
     private String gama, porto;
 
     public Storage(){}

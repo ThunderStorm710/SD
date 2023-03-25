@@ -143,12 +143,17 @@ public class Client implements Runnable {
                         h.indexarURL(cliente, opcao);
 
                     } else if (opcao.equals("2")) {
+                        System.out.print("Pesquisa: ");
                         linha = sc.nextLine();
+                        System.out.println("Linha lida --> " + linha);
                         HashSet<String[]> paginas = h.pesquisarPaginas(cliente, linha);
-                        for (String[] pagina : paginas) {
-                            System.out.println(pagina[0] + " ---> " + pagina[1]);
+                        if (paginas != null){
+                            for (String[] pagina : paginas) {
+                                System.out.println(pagina[0] + " ---> " + pagina[1]);
 
+                            }
                         }
+
                     } else if (opcao.equals("3")) {
                         break;
 

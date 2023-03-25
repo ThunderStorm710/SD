@@ -12,14 +12,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.rmi.RemoteException;
 
-public class StorageBarrel implements Runnable, StorageBarrel_I {
+public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
     File fClientesObj;
     HashMap<String, HashSet<String[]>> index;
     ArrayList<String> stopwords;
     int type_t;
     String porto;
     String gama_palavra;
-    Thread t;
+    transient Thread t;
 
     public StorageBarrel(String nome_fich, int type_t, String gama_palavra, String porto) {
         t = new Thread(this);
@@ -34,7 +34,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I {
 
     public void run() {
         LerArquivoTexto();
-        if(type_t == 0) {
+        if (type_t == 0) {
             MulticastSocket socket = null;
             String MULTICAST_ADDRESS = "224.3.2.1";
             int PORT = 4321;
@@ -63,17 +63,15 @@ public class StorageBarrel implements Runnable, StorageBarrel_I {
             } finally {
                 socket.close();
             }
-        }
-        else if(type_t == 1){
+        } else if (type_t == 1) {
 
             try {
                 SearchModule_I h = (SearchModule_I) LocateRegistry.getRegistry(1100).lookup("Search_Module");
-                System.out.println("ze");
-                if (!h.adicionarInfoInicialBarrel(gama_palavra, porto)){
-                    System.out.println("pila");
+                if (!h.adicionarInfoInicialBarrel(gama_palavra, porto)) {
+                    System.out.println("Nao foi possivel ligar ao Search Module...");
                     return;
                 }
-            }catch ( RemoteException | java.rmi.NotBoundException e) {
+            } catch (RemoteException | java.rmi.NotBoundException e) {
                 System.out.println("Interrupted");
             }
         }
@@ -94,7 +92,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I {
                 String[] valores = {url, titulo, citacao};
                 String p_ascii = Normalizer.normalize(palavra, Normalizer.Form.NFD);
 
-                if(!palavra.equals("") && !stopwords.contains(palavra) && Character.toLowerCase(p_ascii.charAt(0)) >= Character.toLowerCase(gama_palavra.charAt(1)) && Character.toLowerCase(p_ascii.charAt(0)) <= Character.toLowerCase(gama_palavra.charAt(3)) ) {
+                if (!palavra.equals("") && !stopwords.contains(palavra) && Character.toLowerCase(p_ascii.charAt(0)) >= Character.toLowerCase(gama_palavra.charAt(1)) && Character.toLowerCase(p_ascii.charAt(0)) <= Character.toLowerCase(gama_palavra.charAt(3))) {
                     if (!index.containsKey(palavra)) {
                         // Se não existir, cria um novo conjunto de valores
                         HashSet<String[]> values = new HashSet<>();
@@ -157,11 +155,16 @@ public class StorageBarrel implements Runnable, StorageBarrel_I {
     }
 
     public HashSet<String[]> obterInfoBarrel(String palavra) throws RemoteException {
+        System.out.println("DENTRO DO BARREL");
+        System.out.println(index);
+        System.out.println("----------------");
+        System.out.println(index.get(palavra));
+        System.out.println("----------------");
         return index.get(palavra);
     }
 
 
-    public  void LerArquivoTexto() {
+    public void LerArquivoTexto() {
         String nomeArquivo = "stopwords.txt";
 
         try (BufferedReader leitor = new BufferedReader(new FileReader(nomeArquivo))) {
@@ -176,14 +179,15 @@ public class StorageBarrel implements Runnable, StorageBarrel_I {
     }
 
 
-
     public static void main(String[] args) {
         if (args.length != 3) {
             System.out.println("StorageBarrel <NOME DO FICHEIRO> <GAMA DA PALAVRAS [a-z]> <PORTO>");
             return;
         }
-        StorageBarrel s1 = new StorageBarrel(args[0],0,args[1],args[2] );
-        StorageBarrel s2 = new StorageBarrel(args[0],1,args[1],args[2]);//"fich_url1",0,"[a-z]","1000"
+        System.out.println("ARGS" + args[0] + " --- " + args[2]);
+
+        StorageBarrel s1 = new StorageBarrel(args[0], 0, args[1], args[2]);
+        StorageBarrel s2 = new StorageBarrel(args[0], 1, args[1], args[2]);//"fich_url1",0,"[a-z]","1000"
         try {
             Registry r = LocateRegistry.createRegistry(Integer.parseInt(args[2]));
             r.rebind("Storage_Barrel", s2);
