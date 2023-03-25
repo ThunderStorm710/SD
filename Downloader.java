@@ -71,6 +71,7 @@ public class Downloader implements Runnable{
                         for (String numero : lista) {
                             System.out.println(numero);
                         }
+
                         System.out.println("++++++++++++");
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         ObjectOutputStream oos = new ObjectOutputStream(baos);
