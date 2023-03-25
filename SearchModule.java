@@ -16,6 +16,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
     public SearchModule() throws RemoteException {
         super();
         this.clientes = new ArrayList<ClienteInfo>();
+        this.barrels = new ArrayList<Storage>();
     }
 
 
@@ -40,9 +41,13 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
             try {
                 String[] palavras = pesquisa.split(" ");
                 System.out.println("--- PESQUISA ---");
+                System.out.println(barrels);
                 for (String palavra : palavras) {
                     for (Storage s : barrels) {
-                        if (palavra.charAt(0) >= s.getGama().charAt(0) && palavra.charAt(0) <= s.getGama().charAt(2)) {
+                        System.out.println(palavra.charAt(0));
+                        System.out.println(s.getGama().charAt(1));
+                        System.out.println(s.getGama().charAt(3));
+                        if (Character.toUpperCase(palavra.charAt(0)) >= s.getGama().charAt(1) && Character.toUpperCase(palavra.charAt(0)) <= s.getGama().charAt(3)) {
                             StorageBarrel_I sI = (StorageBarrel_I) LocateRegistry.getRegistry(s.getPorto()).lookup("Storage_Barrel");
                             aux = sI.obterInfoBarrel(palavra);
                             lista.add(aux);
@@ -181,14 +186,19 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
 
     public boolean adicionarInfoInicialBarrel(String gama, String porto) throws RemoteException {
         boolean flag = true;
-        if (gama.length() != 3) {
+        if (gama.length() != 5) {
+            System.out.println("1");
             flag = false;
-        } else if ((gama.startsWith("A") && !gama.endsWith("M")) || (gama.startsWith("N") || !gama.endsWith("Z"))) {
+        } else if ((gama.charAt(0) == 'A' && gama.charAt(gama.length() - 2) != 'M') || (gama.charAt(0) == 'N' && gama.charAt(gama.length() - 2) != 'Z') || (gama.charAt(0) == 'a' && gama.charAt(gama.length() - 2) != 'm') || (gama.charAt(0) == 'n' && gama.charAt(gama.length() - 2) != 'z')) {
+            System.out.println("2");
             flag = false;
         } else {
-            for (Storage s : barrels) {
-                if (s.getPorto().equals(porto)) {
-                    flag = false;
+            if (barrels != null){
+                for (Storage s : barrels) {
+                    if (s.getPorto().equals(porto)) {
+                        flag = false;
+                        System.out.println("3");
+                    }
                 }
             }
             if (flag) {

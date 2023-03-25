@@ -3,14 +3,16 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.nio.charset.StandardCharsets;
+import java.rmi.AccessException;
 import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.rmi.RemoteException;
 
-public class StorageBarrel implements Runnable {
+public class StorageBarrel implements Runnable, StorageBarrel_I {
     File fClientesObj;
     HashMap<String, HashSet<String[]>> index;
     ArrayList<String> stopwords;
@@ -41,7 +43,7 @@ public class StorageBarrel implements Runnable {
                 InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
                 socket.joinGroup(group);
                 while (true) {
-                    byte[] buffer = new byte[5000];
+                    byte[] buffer = new byte[50000];
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                     socket.receive(packet);
 
@@ -49,24 +51,26 @@ public class StorageBarrel implements Runnable {
                     ByteArrayInputStream bais = new ByteArrayInputStream(packet.getData());
                     ObjectInputStream ois = new ObjectInputStream(bais);
                     ArrayList<String> receivedList = (ArrayList<String>) ois.readObject();
-                    for (String cona : receivedList) {
-                        System.out.println(cona);
+                    for (String l : receivedList) {
+                        System.out.println(l);
                     }
                     escreverFichObjetos(receivedList);
                     lerFichObjetos();
 
                 }
-            } catch (
-                    IOException | ClassNotFoundException e) {
+            } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
             } finally {
                 socket.close();
             }
         }
         else if(type_t == 1){
+
             try {
                 SearchModule_I h = (SearchModule_I) LocateRegistry.getRegistry(1100).lookup("Search_Module");
+                System.out.println("ze");
                 if (!h.adicionarInfoInicialBarrel(gama_palavra, porto)){
+                    System.out.println("pila");
                     return;
                 }
             }catch ( RemoteException | java.rmi.NotBoundException e) {
@@ -179,13 +183,17 @@ public class StorageBarrel implements Runnable {
             return;
         }
         StorageBarrel s1 = new StorageBarrel(args[0],0,args[1],args[2] );
-        //StorageBarrel s2 = new StorageBarrel("fich_url1",0,"[a-z]","1000");
+        StorageBarrel s2 = new StorageBarrel(args[0],1,args[1],args[2]);//"fich_url1",0,"[a-z]","1000"
         try {
+            Registry r = LocateRegistry.createRegistry(Integer.parseInt(args[2]));
+            r.rebind("Storage_Barrel", s2);
             s1.t.join();
-            //s2.t.join();
+            s2.t.join();
 
         } catch (InterruptedException e) {
             System.out.println("Interrupted");
+        } catch (RemoteException e) {
+            System.out.println("error: " + e);
         }
     }
 }

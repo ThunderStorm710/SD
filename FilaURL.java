@@ -48,7 +48,7 @@ public class FilaURL extends UnicastRemoteObject implements FilaURL_I{
             FilaURL fila = new FilaURL();
             Registry r = LocateRegistry.createRegistry(1099);
             r.rebind("fila_url", fila);
-            //fila.meteNaLista("https://www.uc.pt");
+            fila.meteNaLista("https://www.uc.pt");
             System.out.println(fila);
 
 
