@@ -12,11 +12,13 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
 
     private ArrayList<ClienteInfo> clientes;
     private ArrayList<Storage> barrels;
+    private ArrayList<DownloaderInfo> downloaders;
 
     public SearchModule() throws RemoteException {
         super();
         this.clientes = new ArrayList<>();
         this.barrels = new ArrayList<>();
+        this.downloaders = new ArrayList<>();
     }
 
 
@@ -204,7 +206,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
     }
 
     public void obterLinks(ClienteInfo cliente, String url) throws RemoteException {
-        ArrayList<HashSet<String>> lista = null;
+        ArrayList<HashSet<String>> lista = new ArrayList<>();
         HashSet<String> aux;
         try {
             if (verificarCliente(cliente)) {
@@ -227,6 +229,15 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
         }
 
     }
+
+    public ArrayList<Storage> obterInfoBarrels() throws RemoteException{
+        return barrels;
+    }
+
+    public ArrayList<DownloaderInfo> obterInfoDownloaders() throws RemoteException{
+        return downloaders;
+    }
+
 
     public static void main(String[] args) {
 

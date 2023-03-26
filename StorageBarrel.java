@@ -270,6 +270,9 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
     public HashSet<String> obterLinks(String url) throws RemoteException{
         urlHashmap = lerFichObjetosHashmap();
+        System.out.println(urlHashmap);
+        System.out.println("------------------------------------------");
+        System.out.println(urlHashmap.get(url));
         return urlHashmap.get(url);
     }
 

@@ -1,5 +1,4 @@
 import java.rmi.*;
-import java.util.ArrayList;
 import java.util.HashSet;
 
 public interface StorageBarrel_I extends Remote {

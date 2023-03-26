@@ -1,8 +1,6 @@
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Scanner;
+import java.util.*;
 
 public class Client implements Runnable {
     Thread t;
@@ -150,11 +148,36 @@ public class Client implements Runnable {
                         HashSet<String[]> paginas = h.pesquisarPaginas(cliente, linha);
                         if (paginas != null) {
                             System.out.println("------ Resultados da pesquisa ------");
-                            if (paginas.size() > 10){
-                                for (String[] pagina : paginas) {
-                                    System.out.println(Arrays.toString(pagina));
-                                }
 
+                            if (paginas.size() > 10) {
+                                int i = 0;
+                                Iterator<String[]> iter = paginas.iterator();
+                                for (i = 0; iter.hasNext() && i < 10; i++) {
+                                    System.out.println(Arrays.toString(iter.next()));
+                                }
+                                opcao = "";
+                                while (true) {
+                                    System.out.println("""
+                                            1 - Anterior
+                                            2 - Proximo
+                                            3 - Sair
+                                            """);
+                                    opcao = sc.nextLine();
+                                    /*if (opcao.equals("1") && i > 10){
+                                        for (i = 0; iter.() && i < 10; i++) {
+                                            System.out.println(Arrays.toString(iter.next()));
+                                        }
+                                    }*/
+                                    if (opcao.equals("2")) {
+                                        for (i = 0; iter.hasNext() && i < 10; i++) {
+                                            System.out.println(Arrays.toString(iter.next()));
+                                        }
+                                    } else if (opcao.equals("3")) {
+                                        break;
+                                    } else {
+                                        System.out.println("Opcao invalida...");
+                                    }
+                                }
                             }
                             for (String[] pagina : paginas) {
                                 System.out.println(Arrays.toString(pagina));
@@ -163,12 +186,31 @@ public class Client implements Runnable {
                             System.out.println("Pedimos desculpa mas nao foram encontradas paginas relevantes");
                         }
 
-                    }else if (opcao.equals("3")) {
+                    } else if (opcao.equals("3")) {
                         System.out.print("Insira um link url: ");
                         linha = sc.nextLine();
                         h.obterLinks(cliente, linha);
 
                     } else if (opcao.equals("4")) {
+                        System.out.println("--- Informacoes gerais do sistema ---");
+                        ArrayList<Storage> barrels = h.obterInfoBarrels();
+                        ArrayList<DownloaderInfo> downloaders = h.obterInfoDownloaders();
+                        if (barrels.size() != 0) {
+                            System.out.println("--- Storage Barrels ---");
+
+                            for (Storage s : barrels) {
+                                System.out.println(s);
+                            }
+                        }
+                        if (downloaders.size() != 0) {
+                            System.out.println("--- Downloaders ---");
+                            for (DownloaderInfo d : downloaders) {
+                                System.out.println(d);
+                            }
+                        }
+
+
+                    } else if (opcao.equals("5")) {
                         break;
 
                     } else {
