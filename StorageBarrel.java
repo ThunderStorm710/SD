@@ -11,23 +11,27 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.rmi.RemoteException;
+import java.util.Map;
 
 public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
     File fClientesObj;
+    File fClientesObjHashUrl;
     HashMap<String, HashSet<String[]>> index;
     HashMap<String, HashSet<String>> urlHashmap;
+    private static final int MAX_PACKET_SIZE = 1024;
     ArrayList<String> stopwords;
     int type_t;
     String porto;
     String gama_palavra;
     transient Thread t;
 
-    public StorageBarrel(String nome_fich, int type_t, String gama_palavra, String porto) {
+    public StorageBarrel(String nome_fich, String nome_fich2, int type_t, String gama_palavra, String porto) {
         t = new Thread(this);
         this.index = new HashMap<>();
         this.urlHashmap = new HashMap<>();
         this.stopwords = new ArrayList<>();
         this.fClientesObj = new File(nome_fich);
+        this.fClientesObjHashUrl = new File(nome_fich2);
         this.type_t = type_t;
         this.porto = porto;
         this.gama_palavra = gama_palavra;
@@ -53,11 +57,77 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                     ByteArrayInputStream bais = new ByteArrayInputStream(packet.getData());
                     ObjectInputStream ois = new ObjectInputStream(bais);
                     ArrayList<String> receivedList = (ArrayList<String>) ois.readObject();
+
+
+                    /*
+                    byte[] buffer2 = new byte[50000];
+                    DatagramPacket packet2 = new DatagramPacket(buffer2, buffer2.length);
+                    socket.receive(packet2);
+
+                    System.out.println("Received packet from " + packet2.getAddress().getHostAddress() + ":" + packet2.getPort() + " with message:");
+                    ByteArrayInputStream bais2 = new ByteArrayInputStream(packet2.getData());
+                    ObjectInputStream ois2 = new ObjectInputStream(bais2);
+
+                    HashMap<String, HashSet<String>> urlsLigacoes = (HashMap<String, HashSet<String>>) ois2.readObject();
+
+                     */
+
+
+                    byte[] data = new byte[0];
+                    while (true) {
+                        byte[] buffer2 = new byte[MAX_PACKET_SIZE];
+                        DatagramPacket packet2 = new DatagramPacket(buffer2, buffer2.length);
+                        socket.receive(packet2);
+
+                        byte[] receivedData = packet2.getData();
+                        int receivedSize = packet2.getLength();
+                        byte[] newData = new byte[data.length + receivedSize];
+                        System.arraycopy(data, 0, newData, 0, data.length);
+                        System.arraycopy(receivedData, 0, newData, data.length, receivedSize);
+                        data = newData;
+
+                        if (receivedSize < MAX_PACKET_SIZE) {
+                            break;
+                        }
+                    }
+
+                    try {
+                        ByteArrayInputStream byteStream = new ByteArrayInputStream(data);
+                        ObjectInputStream objectStream = new ObjectInputStream(byteStream);
+                        HashMap<String, HashSet<String>> urlsLigacoes = (HashMap<String, HashSet<String>>) objectStream.readObject();
+
+                        escreverFichObjetosHashmap(urlsLigacoes);
+                        urlHashmap = lerFichObjetosHashmap();
+                    } catch (UTFDataFormatException e) {
+                        System.out.println("String em codificacao invalida...");
+                    }
+
                     for (String l : receivedList) {
                         System.out.println(l);
                     }
+
                     escreverFichObjetos(receivedList);
                     index = lerFichObjetos();
+
+                    //escreverFichObjetosHashmap(urlsLigacoes);
+                    //urlHashmap = lerFichObjetosHashmap();
+
+
+                    if (urlHashmap != null) {
+                        System.out.println("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
+                        for (Map.Entry<String, HashSet<String>> entry : urlHashmap.entrySet()) {
+                            String key = entry.getKey();
+                            HashSet<String> values = entry.getValue();
+                            System.out.println("Chave: " + key);
+                            System.out.println("Valores: " + values);
+                        }
+                        System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+                    }
+
+
+
+
+
 
                 }
             } catch (IOException | ClassNotFoundException e) {
@@ -79,13 +149,47 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         }
     }
 
+    public void escreverFichObjetosHashmap(HashMap<String, HashSet<String>> urlsHash) {
+
+        try {
+            FileOutputStream iOS = new FileOutputStream(fClientesObjHashUrl);
+            ObjectOutputStream oOS = new ObjectOutputStream(iOS);
+
+            oOS.writeObject(urlsHash);
+            oOS.close();
+        } catch (IOException e) {
+            System.out.println("ERRO " + e);
+        }
+    }
+
+    public HashMap<String, HashSet<String>> lerFichObjetosHashmap() {
+        HashMap<String, HashSet<String>> urlsHash = null;
+        if (fClientesObjHashUrl.exists()) {
+            try {
+                FileInputStream fIS = new FileInputStream(fClientesObjHashUrl);
+                ObjectInputStream oIS = new ObjectInputStream(fIS);
+                urlsHash = (HashMap<String, HashSet<String>>) oIS.readObject();
+                oIS.close();
+
+
+            } catch (EOFException e) {
+                System.out.print("");
+            } catch (ClassNotFoundException | IOException e) {
+                System.out.println("ERRO " + e);
+            }
+        } else {
+            System.out.println("Ficheiro de Objetos não existe...");
+        }
+        return urlsHash;
+    }
+
     public void escreverFichObjetos(ArrayList<String> receivedList) {
         String titulo = receivedList.get(1);
         String url = receivedList.get(0);
         String citacao = receivedList.get(2);
-        receivedList.remove(0);
-        receivedList.remove(1);
         receivedList.remove(2);
+        receivedList.remove(1);
+        receivedList.remove(0);
         try {
             FileOutputStream iOS = new FileOutputStream(fClientesObj);
             ObjectOutputStream oOS = new ObjectOutputStream(iOS);
@@ -158,14 +262,14 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
 
 
+
     public HashSet<String[]> obterInfoBarrel(String palavra) throws RemoteException {
         index = lerFichObjetos();
         return index.get(palavra);
     }
 
     public HashSet<String> obterLinks(String url) throws RemoteException{
-        //urlHashmap = lerFichObjetos();
-        /****MUDAR AQUI PARA O SUPOSTO****/
+        urlHashmap = lerFichObjetosHashmap();
         return urlHashmap.get(url);
     }
 
@@ -186,16 +290,16 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
 
     public static void main(String[] args) {
-        if (args.length != 3) {
-            System.out.println("StorageBarrel <NOME DO FICHEIRO> <GAMA DA PALAVRAS [A-Z]> <PORTO>");
+        if (args.length != 4) {
+            System.out.println("StorageBarrel <NOME DO FICHEIRO> <GAMA DA PALAVRAS [a-z]> <PORTO>");
             return;
         }
-        System.out.println("ARGS" + args[0] + " --- " + args[2]);
+        System.out.println("ARGS" + args[0] + " --- " + args[3]);
 
-        StorageBarrel s1 = new StorageBarrel(args[0], 0, args[1], args[2]);
-        StorageBarrel s2 = new StorageBarrel(args[0], 1, args[1], args[2]);//"fich_url1",0,"[a-z]","1000"
+        StorageBarrel s1 = new StorageBarrel(args[0], args[1], 0, args[2], args[3]);
+        StorageBarrel s2 = new StorageBarrel(args[0], args[1],1, args[2], args[3]);//"fich_url1",0,"[a-z]","1000"
         try {
-            Registry r = LocateRegistry.createRegistry(Integer.parseInt(args[2]));
+            Registry r = LocateRegistry.createRegistry(Integer.parseInt(args[3]));
             r.rebind("Storage_Barrel", s2);
             s1.t.join();
             s2.t.join();

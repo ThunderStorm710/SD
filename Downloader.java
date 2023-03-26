@@ -3,6 +3,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.UTFDataFormatException;
 import java.net.*;
 import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
@@ -11,14 +12,14 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.*;
 
-public class Downloader implements Runnable {
+public class Downloader implements Runnable{
 
     HashMap<String, HashSet<String>> urlsLig;
+    private static final int MAX_CHUNK_SIZE = 1024;
     private final String MULTICAST_ADDRESS = "224.3.2.1";
     private final int PORT = 4321;
 
     Thread t;
-
     public Downloader() {
         this.urlsLig = new HashMap<>();
         t = new Thread(this);
@@ -30,7 +31,7 @@ public class Downloader implements Runnable {
         try {
             FilaURL_I h = (FilaURL_I) LocateRegistry.getRegistry(1099).lookup("fila_url");
             socket = new MulticastSocket();
-            while (true) {
+            while(true){
 
                 String url = h.sendUrl();
                 URL url_test = new URL(url);
@@ -39,9 +40,10 @@ public class Downloader implements Runnable {
                 connection.setRequestMethod("HEAD");
                 int responseCode = connection.getResponseCode();
                 if (responseCode != HttpURLConnection.HTTP_OK) {
-                    System.out.println("O URL nao pode ser alcancado. Codigo de resposta HTTP: " + responseCode);
+                    System.out.println("O URL não pode ser alcançado. Código de resposta HTTP: " + responseCode);
 
-                } else {
+                }
+                else {
 
                     ArrayList<String> lista = new ArrayList<>();
 
@@ -56,7 +58,7 @@ public class Downloader implements Runnable {
                         lista.add(url);
                         lista.add(title);
 
-                        if (firstParagraph != null) {
+                        if (firstParagraph != null){
                             lista.add(firstParagraph.text());
                         }
 
@@ -83,6 +85,31 @@ public class Downloader implements Runnable {
                         DatagramPacket packet = new DatagramPacket(serializedData, serializedData.length, group, PORT);
 
                         socket.send(packet);
+
+
+
+                        if (urlsLig != null) {
+                            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+                            ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
+                            objectStream.writeObject(urlsLig);
+                            byte[] data = byteStream.toByteArray();
+
+                            int offset = 0;
+                            while (offset < data.length) {
+                                int chunkSize = Math.min(MAX_CHUNK_SIZE, data.length - offset);
+                                byte[] chunkData = new byte[chunkSize];
+                                System.arraycopy(data, offset, chunkData, 0, chunkSize);
+
+                                DatagramPacket packet2 = new DatagramPacket(chunkData, chunkSize, group, PORT);
+
+                                socket.send(packet2);
+
+                                offset += chunkSize;
+                            }
+
+                        }
+
+
 
                         Elements links = doc.select("a[href]");
                         for (Element link : links) {
@@ -114,7 +141,7 @@ public class Downloader implements Runnable {
                 }
 
             }
-        } catch (IOException | NotBoundException e) {
+        } catch (IOException | NotBoundException e ) {
             e.printStackTrace();
         } finally {
             socket.close();
@@ -128,7 +155,7 @@ public class Downloader implements Runnable {
             d1.t.join();
             //d2.t.join();
 
-        } catch (InterruptedException e) {
+        } catch(InterruptedException e) {
             System.out.println("Interrupted");
         }
     }

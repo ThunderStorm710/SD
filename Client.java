@@ -150,9 +150,17 @@ public class Client implements Runnable {
                         HashSet<String[]> paginas = h.pesquisarPaginas(cliente, linha);
                         if (paginas != null) {
                             System.out.println("------ Resultados da pesquisa ------");
+                            if (paginas.size() > 10){
+                                for (String[] pagina : paginas) {
+                                    System.out.println(Arrays.toString(pagina));
+                                }
+
+                            }
                             for (String[] pagina : paginas) {
                                 System.out.println(Arrays.toString(pagina));
                             }
+                        } else {
+                            System.out.println("Pedimos desculpa mas nao foram encontradas paginas relevantes");
                         }
 
                     }else if (opcao.equals("3")) {
