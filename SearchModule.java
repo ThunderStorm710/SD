@@ -70,6 +70,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
             } catch (Exception e) {
                 System.out.println("Error" + e);
             }
+
         }
         return null;
     }
