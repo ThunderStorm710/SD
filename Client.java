@@ -1,5 +1,6 @@
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Scanner;
 
@@ -124,15 +125,16 @@ public class Client implements Runnable {
                 }
 
             }
-            if (entrada){
+            if (entrada) {
                 while (true) {
                     System.out.println("""
-                        --- BEM-VINDO ---
-                        Que operacao deseja realizar?
-                        1 - Indexar novo URL
-                        2 - Pesquisar
-                        3 - Sair
-                        """);
+                            --- BEM-VINDO ---
+                            Que operacao deseja realizar?
+                            1 - Indexar novo URL
+                            2 - Pesquisar
+                            3 - Consultar lista de paginas
+                            4 - Sair
+                            """);
                     opcao = sc.nextLine();
                     if (opcao.length() != 1) {
                         System.out.println("Opcao invalida...");
@@ -145,16 +147,20 @@ public class Client implements Runnable {
                     } else if (opcao.equals("2")) {
                         System.out.print("Pesquisa: ");
                         linha = sc.nextLine();
-                        System.out.println("Linha lida --> " + linha);
                         HashSet<String[]> paginas = h.pesquisarPaginas(cliente, linha);
-                        if (paginas != null){
+                        if (paginas != null) {
+                            System.out.println("------ Resultados da pesquisa ------");
                             for (String[] pagina : paginas) {
-                                System.out.println(pagina[0] + " ---> " + pagina[1]);
-
+                                System.out.println(Arrays.toString(pagina));
                             }
                         }
 
-                    } else if (opcao.equals("3")) {
+                    }else if (opcao.equals("3")) {
+                        System.out.print("Insira um link url: ");
+                        linha = sc.nextLine();
+                        h.obterLinks(cliente, linha);
+
+                    } else if (opcao.equals("4")) {
                         break;
 
                     } else {

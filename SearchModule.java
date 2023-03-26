@@ -34,6 +34,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
 
         }
     }
+
     synchronized public HashSet<String[]> pesquisarPaginas(ClienteInfo cliente, String pesquisa) throws RemoteException {
         ArrayList<HashSet<String[]>> lista = new ArrayList<>();
         HashSet<String[]> aux;
@@ -44,13 +45,10 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
                 System.out.println(barrels);
                 for (String palavra : palavras) {
                     for (Storage s : barrels) {
-                        System.out.println(palavra.charAt(0) +" --- " +s.getGama().charAt(1) + " --- " + s.getGama().charAt(3));
+                        System.out.println(palavra.charAt(0) + " --- " + s.getGama().charAt(1) + " --- " + s.getGama().charAt(3));
                         if (Character.toUpperCase(palavra.charAt(0)) >= s.getGama().charAt(1) && Character.toUpperCase(palavra.charAt(0)) <= s.getGama().charAt(3)) {
-                            System.out.println("Encontrei um barrel");
                             int porto = Integer.parseInt(s.getPorto());
-                            System.out.println("Porto do barrel = " + porto);
                             StorageBarrel_I sI = (StorageBarrel_I) LocateRegistry.getRegistry(porto).lookup("Storage_Barrel");
-                            System.out.println("Passei aqui");
                             aux = sI.obterInfoBarrel(palavra);
                             lista.add(aux);
                             System.out.println(aux);
@@ -62,7 +60,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
                 }
 
                 System.out.println("--- FIM PESQUISA ---");
-                System.out.println("RESULTADOS DA PESQUISA ANTES DA INTERSEÇÃO");
+                System.out.println("RESULTADOS DA PESQUISA ANTES DA INTERSECAO");
                 System.out.println(lista);
                 System.out.println("-------------------------------------------");
                 return intersection(lista);
@@ -75,35 +73,30 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
     }
 
     public static HashSet<String[]> intersection(ArrayList<HashSet<String[]>> sets) {
-        // passo 1
         HashSet<String> allLinks = new HashSet<>();
         for (String[] set : sets.get(0)) {
             allLinks.add(set[0]);
         }
 
-        // passo 2
         for (int i = 1; i < sets.size(); i++) {
             HashSet<String[]> currentSet = sets.get(i);
             HashSet<String> currentLinks = new HashSet<>();
             for (String[] set : currentSet) {
                 currentLinks.add(set[0]);
             }
-            allLinks.retainAll(currentLinks); // passo 3
+            allLinks.retainAll(currentLinks);
         }
 
-        // passo 4
         HashSet<String[]> result = new HashSet<>();
 
-        // passo 5
         for (String[] set : sets.get(0)) {
             if (allLinks.contains(set[0])) {
                 result.add(set);
             }
         }
 
-        return result; // passo 6
+        return result;
     }
-
 
 
     synchronized public boolean verificarCliente(ClienteInfo cliente) {
@@ -122,7 +115,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
 
         for (ClienteInfo c : clientes) {
             if (c.getNome().equals(nome) || c.getEmail().equals(email) || c.getUsername().equals(username)) {
-                System.out.println("Nome, username ou email  ja se encontram associados a um utilizador ja existente na base de dados...por favor volte a inserir as suas credencias...");
+                System.out.println("Nome, username ou email ja se encontram associados a um utilizador ja existente na base de dados...por favor volte a inserir as suas credencias...");
                 flag = false;
             } else {
                 flag = true;
@@ -140,7 +133,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
 
         return c1;
     }
-
 
     public ClienteInfo verificarLogin(String username, String password) throws RemoteException {
         ClienteInfo c1 = null;
@@ -192,17 +184,15 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
     public boolean adicionarInfoInicialBarrel(String gama, String porto) throws RemoteException {
         boolean flag = true;
         if (gama.length() != 5) {
-            System.out.println("1");
             flag = false;
-        } else if ((gama.charAt(0) == 'A' && gama.charAt(gama.length() - 2) != 'M') || (gama.charAt(0) == 'N' && gama.charAt(gama.length() - 2) != 'Z') || (gama.charAt(0) == 'a' && gama.charAt(gama.length() - 2) != 'm') || (gama.charAt(0) == 'n' && gama.charAt(gama.length() - 2) != 'z')) {
-            System.out.println("2");
+        } else if ((Character.toUpperCase(gama.charAt(0)) == 'A' && Character.toUpperCase(gama.charAt(3)) != 'M') || (Character.toUpperCase(gama.charAt(0)) == 'N' && Character.toUpperCase(gama.charAt(3)) != 'Z')) {
+            System.out.println("POTETU");
             flag = false;
         } else {
-            if (barrels != null){
+            if (barrels != null) {
                 for (Storage s : barrels) {
                     if (s.getPorto().equals(porto)) {
                         flag = false;
-                        System.out.println("3");
                     }
                 }
             }
@@ -213,6 +203,30 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
         return flag;
     }
 
+    public void obterLinks(ClienteInfo cliente, String url) throws RemoteException {
+        ArrayList<HashSet<String>> lista = null;
+        HashSet<String> aux;
+        try {
+            if (verificarCliente(cliente)) {
+                System.out.println("--- PESQUISA ---");
+                System.out.println(barrels);
+                for (Storage s : barrels) {
+                    int porto = Integer.parseInt(s.getPorto());
+                    StorageBarrel_I sI = (StorageBarrel_I) LocateRegistry.getRegistry(porto).lookup("Storage_Barrel");
+                    if ((aux = sI.obterLinks(url)) != null){
+                        lista.add(aux);
+                    }
+                }
+                System.out.println(lista);
+                System.out.println("--- FIM PESQUISA ---");
+            } else {
+                System.out.println("Permissoes insuficientes...");
+            }
+        } catch (Exception e){
+            System.out.println("Erro: " + e);
+        }
+
+    }
 
     public static void main(String[] args) {
 
@@ -222,7 +236,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
 
             Registry r = LocateRegistry.createRegistry(1100);
             r.rebind("Search_Module", sM);
-
 
 
         } catch (Exception e) {

@@ -15,6 +15,7 @@ import java.rmi.RemoteException;
 public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
     File fClientesObj;
     HashMap<String, HashSet<String[]>> index;
+    HashMap<String, HashSet<String>> urlHashmap;
     ArrayList<String> stopwords;
     int type_t;
     String porto;
@@ -24,6 +25,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
     public StorageBarrel(String nome_fich, int type_t, String gama_palavra, String porto) {
         t = new Thread(this);
         this.index = new HashMap<>();
+        this.urlHashmap = new HashMap<>();
         this.stopwords = new ArrayList<>();
         this.fClientesObj = new File(nome_fich);
         this.type_t = type_t;
@@ -158,12 +160,13 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
     public HashSet<String[]> obterInfoBarrel(String palavra) throws RemoteException {
         index = lerFichObjetos();
-        System.out.println("DENTRO DO BARREL");
-        System.out.println(index);
-        System.out.println("----------------");
-        System.out.println(index.get(palavra));
-        System.out.println("----------------");
         return index.get(palavra);
+    }
+
+    public HashSet<String> obterLinks(String url) throws RemoteException{
+        //urlHashmap = lerFichObjetos();
+        /****MUDAR AQUI PARA O SUPOSTO****/
+        return urlHashmap.get(url);
     }
 
 
@@ -184,7 +187,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
     public static void main(String[] args) {
         if (args.length != 3) {
-            System.out.println("StorageBarrel <NOME DO FICHEIRO> <GAMA DA PALAVRAS [a-z]> <PORTO>");
+            System.out.println("StorageBarrel <NOME DO FICHEIRO> <GAMA DA PALAVRAS [A-Z]> <PORTO>");
             return;
         }
         System.out.println("ARGS" + args[0] + " --- " + args[2]);
