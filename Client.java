@@ -150,12 +150,13 @@ public class Client implements Runnable {
                             System.out.println("------ Resultados da pesquisa ------");
 
                             if (paginas.size() > 10) {
-                                int i = 0;
-                                Iterator<String[]> iter = paginas.iterator();
-                                for (i = 0; iter.hasNext() && i < 10; i++) {
-                                    System.out.println(Arrays.toString(iter.next()));
+                                int i, contador;
+                                ArrayList<String[]> lista = new ArrayList<>(paginas);
+                                for (i = 0; i < lista.size() && i < 10; i++) {
+                                    System.out.println(Arrays.toString(lista.get(i)));
                                 }
                                 opcao = "";
+                                label:
                                 while (true) {
                                     System.out.println("""
                                             1 - Anterior
@@ -163,19 +164,27 @@ public class Client implements Runnable {
                                             3 - Sair
                                             """);
                                     opcao = sc.nextLine();
-                                    /*if (opcao.equals("1") && i > 10){
-                                        for (i = 0; iter.() && i < 10; i++) {
-                                            System.out.println(Arrays.toString(iter.next()));
-                                        }
-                                    }*/
-                                    if (opcao.equals("2")) {
-                                        for (i = 0; iter.hasNext() && i < 10; i++) {
-                                            System.out.println(Arrays.toString(iter.next()));
-                                        }
-                                    } else if (opcao.equals("3")) {
-                                        break;
-                                    } else {
-                                        System.out.println("Opcao invalida...");
+
+                                    switch (opcao) {
+                                        case "1":
+                                            if (i > 10) {
+                                                contador = i;
+                                                for (; i > 0 && contador - i < 10; i--) {
+                                                    System.out.println(Arrays.toString(lista.get(i)));
+                                                }
+                                            }
+                                            break;
+                                        case "2":
+                                            contador = i;
+                                            for (; i < lista.size() && i - contador < 10; i++) {
+                                                System.out.println(Arrays.toString(lista.get(i)));
+                                            }
+                                            break;
+                                        case "3":
+                                            break label;
+                                        default:
+                                            System.out.println("Opcao invalida...");
+                                            break;
                                     }
                                 }
                             }
@@ -187,9 +196,18 @@ public class Client implements Runnable {
                         }
 
                     } else if (opcao.equals("3")) {
+
                         System.out.print("Insira um link url: ");
                         linha = sc.nextLine();
-                        h.obterLinks(cliente, linha);
+                        ArrayList<HashSet<String>> lista = h.obterLinks(cliente, linha);
+                        if (lista.size() != 0) {
+                            for (HashSet<String> s : lista) {
+                                System.out.println(s);
+
+                            }
+                        } else {
+                            System.out.println("Link não encontrado...");
+                        }
 
                     } else if (opcao.equals("4")) {
                         System.out.println("--- Informacoes gerais do sistema ---");
