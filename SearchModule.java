@@ -205,12 +205,12 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
         return flag;
     }
 
-    public ArrayList<HashSet<String>> obterLinks(ClienteInfo cliente, String url) throws RemoteException {
+    public void obterLinks(ClienteInfo cliente, String url) throws RemoteException {
         ArrayList<HashSet<String>> lista = new ArrayList<>();
         HashSet<String> aux;
         try {
             if (verificarCliente(cliente)) {
-                System.out.println("--- PESQUISA LINKS ---");
+                System.out.println("--- PESQUISA ---");
                 System.out.println(barrels);
                 for (Storage s : barrels) {
                     int porto = Integer.parseInt(s.getPorto());
@@ -220,14 +220,14 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
                     }
                 }
                 System.out.println(lista);
-                System.out.println("--- FIM PESQUISA LINKS ---");
+                System.out.println("--- FIM PESQUISA ---");
             } else {
                 System.out.println("Permissoes insuficientes...");
             }
         } catch (Exception e){
             System.out.println("Erro: " + e);
         }
-        return lista;
+
     }
 
     public ArrayList<Storage> obterInfoBarrels() throws RemoteException{
