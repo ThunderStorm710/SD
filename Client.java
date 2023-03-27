@@ -32,7 +32,7 @@ public class Client {
 
                 } else {
                     flag = true;
-                    System.out.println("Inscricaoo validada com sucesso!");
+                    System.out.println("Inscricao validada com sucesso!");
                     System.out.println("Seja bem-vindo, " + c1.getNome() + "!!\n");
                 }
             }
@@ -77,6 +77,113 @@ public class Client {
         return c1;
     }
 
+    public static void indexarURL(SearchModule_I h, ClienteInfo cliente) throws RemoteException{
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Insira um URL: ");
+        String opcao = sc.nextLine();
+        System.out.println("Vou indexar!");
+        h.indexarURL(cliente, opcao);
+    }
+
+    public static void consultarListaPaginas(SearchModule_I h, ClienteInfo cliente) throws RemoteException{
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Insira um link url: ");
+        String linha = sc.nextLine();
+        System.out.println();
+
+        ArrayList<HashSet<String>> lista = h.obterLinks(cliente, linha);
+        if (lista.size() == 0){
+            System.out.println("Ligacao URL nao encontrada...");
+        } else {
+            for (HashSet<String> cadeia: lista) {
+                for (String s: cadeia){
+                    System.out.println(s);
+                }
+            }
+        }
+    }
+    public static void obterInfoGerais(SearchModule_I h) throws RemoteException{
+
+        System.out.println("--- Informacoes gerais do sistema ---");
+        ArrayList<Storage> barrels = h.obterInfoBarrels();
+        ArrayList<DownloaderInfo> downloaders = h.obterInfoDownloaders();
+        if (barrels.size() != 0) {
+            System.out.println("--- Storage Barrels ---");
+
+            for (Storage s : barrels) {
+                System.out.println(s);
+            }
+        }
+        if (downloaders.size() != 0) {
+            System.out.println("--- Downloaders ---");
+            for (DownloaderInfo d : downloaders) {
+                System.out.println(d);
+            }
+        }
+    }
+
+    public static void realizarPesquisa(SearchModule_I h, ClienteInfo cliente) throws RemoteException{
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Pesquisa: ");
+        String linha = sc.nextLine();
+        HashSet<String[]> paginas = h.pesquisarPaginas(cliente, linha);
+        if (paginas != null) {
+            System.out.println("------ Resultados da pesquisa ------");
+
+            if (paginas.size() > 10) {
+                int i, contador;
+                ArrayList<String[]> lista = new ArrayList<>(paginas);
+                for (i = 0; i < lista.size() && i < 10; i++) {
+                    System.out.println(Arrays.toString(lista.get(i)));
+                }
+                label:
+                while (true) {
+                    System.out.println("""
+                                            1 - Anterior
+                                            2 - Proximo
+                                            3 - Sair
+                                            """);
+                    String opcao = sc.nextLine();
+
+                    switch (opcao) {
+                        case "1":
+                            if (i >= 10) {
+                                contador = i;
+                                if (contador >= lista.size()) {
+                                    contador = i = lista.size() - 1;
+                                }
+                                for (; i > 0 && contador - i < 10; i--) {
+                                    System.out.println(Arrays.toString(lista.get(i)));
+                                }
+
+                            }
+                            break;
+                        case "2":
+                            contador = i;
+                            if (i < lista.size()) {
+                                for (; i < lista.size() && i - contador < 10; i++) {
+                                    System.out.println(Arrays.toString(lista.get(i)));
+                                }
+                            }
+                            break;
+                        case "3":
+                            break label;
+                        default:
+                            System.out.println("Opcao invalida...");
+                            break;
+                    }
+                }
+            } else {
+                for (String[] pagina : paginas) {
+                    System.out.println(Arrays.toString(pagina));
+                }
+            }
+
+        } else {
+            System.out.println("Pedimos desculpa mas nao foram encontradas paginas relevantes");
+        }
+    }
+
 
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
@@ -86,156 +193,82 @@ public class Client {
         try {
             SearchModule_I h = (SearchModule_I) LocateRegistry.getRegistry(1100).lookup("Search_Module");
 
+            label1:
             while (!entrada) {
                 System.out.println("""
                         --- BEM-VINDO ---
-                        1 - Registar
-                        2 - Login
-                        3 - Sair
+                        \t1 - Registar
+                        \t2 - Login
+                        \t3 - Sair
+                        -----------------
                         """);
                 opcao = sc.nextLine();
-                if (opcao.length() != 1) {
-                    System.out.println("Opcao invalida...");
-                } else if (opcao.equals("1")) {
-                    if ((cliente = registar(h)) != null) {
-                        entrada = true;
-                    }
 
-                } else if (opcao.equals("2")) {
-                    if ((cliente = login(h)) != null) {
-                        entrada = true;
-                    }
-                } else if (opcao.equals("3")) {
-                    break;
+                switch (opcao) {
+                    case "1":
+                        if ((cliente = registar(h)) != null) {
+                            entrada = true;
+                        }
 
-                } else {
-                    System.out.println("Opcao invalida...");
+                        break;
+                    case "2":
+                        if ((cliente = login(h)) != null) {
+                            entrada = true;
+                        }
+                        break;
+                    case "3":
+                        break label1;
+
+                    default:
+                        System.out.println("Opcao invalida...");
+                        break;
                 }
-
             }
             if (entrada) {
+                label:
                 while (true) {
+
                     System.out.println("""
-                            --- BEM-VINDO ---
+                            ------------------- BEM-VINDO -------------------
                             Que operacao deseja realizar?
-                            1 - Indexar novo URL
-                            2 - Pesquisar
-                            3 - Consultar lista de paginas
-                            4 - Sair
+                            \t1 - Indexar novo URL
+                            \t2 - Pesquisar
+                            \t3 - Consultar lista de paginas
+                            \t4 - Obter Informacoes gerais sobre o sistema
+                            \t5 - Sair
+                            -------------------------------------------------
                             """);
+
                     opcao = sc.nextLine();
-                    if (opcao.length() != 1) {
-                        System.out.println("Opcao invalida...");
-                    } else if (opcao.equals("1")) {
-                        System.out.print("Insira um URL: ");
-                        opcao = sc.nextLine();
-                        System.out.println("Vou indexar!");
-                        h.indexarURL(cliente, opcao);
 
-                    } else if (opcao.equals("2")) {
-                        System.out.print("Pesquisa: ");
-                        linha = sc.nextLine();
-                        HashSet<String[]> paginas = h.pesquisarPaginas(cliente, linha);
-                        if (paginas != null) {
-                            System.out.println("------ Resultados da pesquisa ------");
+                    switch (opcao) {
+                        case "1":
+                            indexarURL(h, cliente);
 
-                            if (paginas.size() > 10) {
-                                int i, contador;
-                                ArrayList<String[]> lista = new ArrayList<>(paginas);
-                                for (i = 0; i < lista.size() && i < 10; i++) {
-                                    System.out.println(Arrays.toString(lista.get(i)));
-                                }
-                                label:
-                                while (true) {
-                                    System.out.println("""
-                                            1 - Anterior
-                                            2 - Proximo
-                                            3 - Sair
-                                            """);
-                                    opcao = sc.nextLine();
+                            break;
+                        case "2":
+                            realizarPesquisa(h, cliente);
 
-                                    switch (opcao) {
-                                        case "1":
-                                            if (i >= 10) {
-                                                contador = i;
-                                                if (contador >= lista.size()) {
-                                                    contador = i = lista.size() - 1;
-                                                }
-                                                for (; i > 0 && contador - i < 10; i--) {
-                                                    System.out.println(Arrays.toString(lista.get(i)));
-                                                }
+                            break;
+                        case "3":
+                            consultarListaPaginas(h, cliente);
 
-                                            }
-                                            break;
-                                        case "2":
-                                            contador = i;
-                                            if (i < lista.size()) {
-                                                for (; i < lista.size() && i - contador < 10; i++) {
-                                                    System.out.println(Arrays.toString(lista.get(i)));
-                                                }
-                                            }
-                                            break;
-                                        case "3":
-                                            break label;
-                                        default:
-                                            System.out.println("Opcao invalida...");
-                                            break;
-                                    }
-                                }
-                            } else {
-                                for (String[] pagina : paginas) {
-                                    System.out.println(Arrays.toString(pagina));
-                                }
-                            }
-
-                        } else {
-                            System.out.println("Pedimos desculpa mas nao foram encontradas paginas relevantes");
-                        }
-
-                    } else if (opcao.equals("3")) {
-                        System.out.print("Insira um link url: ");
-                        linha = sc.nextLine();
-                        System.out.println();
-                        ArrayList<HashSet<String>> lista = h.obterLinks(cliente, linha);
-                        if (lista.size() == 0){
-                            System.out.println("Ligacao URL nao encontrada...");
-                        } else {
-                            for (HashSet<String> cadeia: lista) {
-                                for (String s: cadeia){
-                                    System.out.println(s);
-                                }
-                            }
-                        }
-
-                    } else if (opcao.equals("4")) {
-                        System.out.println("--- Informacoes gerais do sistema ---");
-                        ArrayList<Storage> barrels = h.obterInfoBarrels();
-                        ArrayList<DownloaderInfo> downloaders = h.obterInfoDownloaders();
-                        if (barrels.size() != 0) {
-                            System.out.println("--- Storage Barrels ---");
-
-                            for (Storage s : barrels) {
-                                System.out.println(s);
-                            }
-                        }
-                        if (downloaders.size() != 0) {
-                            System.out.println("--- Downloaders ---");
-                            for (DownloaderInfo d : downloaders) {
-                                System.out.println(d);
-                            }
-                        }
+                            break;
+                        case "4":
+                            obterInfoGerais(h);
 
 
-                    } else if (opcao.equals("5")) {
-                        break;
+                            break;
+                        case "5":
+                            break label;
 
-                    } else {
-                        System.out.println("Opcao invalida...");
+                        default:
+                            System.out.println("Opcao invalida...");
+                            break;
                     }
 
                 }
             }
-
 
         } catch (java.rmi.RemoteException |
                 java.rmi.NotBoundException e) {
