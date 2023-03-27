@@ -1,10 +1,9 @@
 import java.io.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.rmi.*;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.*;
-import java.util.HashSet;
 
 
 public class SearchModule extends UnicastRemoteObject implements SearchModule_I {
@@ -39,18 +38,23 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
 
     synchronized public HashSet<String[]> pesquisarPaginas(ClienteInfo cliente, String pesquisa) throws RemoteException {
         ArrayList<HashSet<String[]>> lista = new ArrayList<>();
+        HashMap<String, Integer> mapaFreqs = new HashMap<>();
         HashSet<String[]> aux;
+        HashSet<String> auxURL;
+        int porto, freq;
+
         if (verificarCliente(cliente)) {
             try {
                 String[] palavras = pesquisa.split(" ");
                 System.out.println("--- PESQUISA ---");
                 System.out.println(barrels);
+                StorageBarrel_I sI;
                 for (String palavra : palavras) {
                     for (Storage s : barrels) {
                         System.out.println(palavra.charAt(0) + " --- " + s.getGama().charAt(1) + " --- " + s.getGama().charAt(3));
                         if (Character.toUpperCase(palavra.charAt(0)) >= s.getGama().charAt(1) && Character.toUpperCase(palavra.charAt(0)) <= s.getGama().charAt(3)) {
-                            int porto = Integer.parseInt(s.getPorto());
-                            StorageBarrel_I sI = (StorageBarrel_I) LocateRegistry.getRegistry(porto).lookup("Storage_Barrel");
+                            porto = Integer.parseInt(s.getPorto());
+                            sI = (StorageBarrel_I) LocateRegistry.getRegistry(porto).lookup("Storage_Barrel");
                             aux = sI.obterInfoBarrel(palavra);
                             lista.add(aux);
                             System.out.println(aux);
@@ -65,7 +69,43 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
                 System.out.println("RESULTADOS DA PESQUISA ANTES DA INTERSECAO");
                 System.out.println(lista);
                 System.out.println("-------------------------------------------");
-                return intersection(lista);
+                HashSet<String[]> set = intersection(lista);
+
+
+                for (Storage s : barrels) {
+                    porto = Integer.parseInt(s.getPorto());
+                    sI = (StorageBarrel_I) LocateRegistry.getRegistry(porto).lookup("Storage_Barrel");
+                    for (String[] link : set) {
+                        freq = sI.obterLinks(link[0]).size();
+                        mapaFreqs.put(link[0], freq);
+                    }
+                    break;
+                }
+
+                Comparator<String[]> comparador = (o1, o2) -> {
+                    int ocorrenciasO1 = mapaFreqs.get(o1[0]);
+                    int ocorrenciasO2 = mapaFreqs.get(o2[0]);
+                    return Integer.compare(ocorrenciasO2, ocorrenciasO1); // Ordenar em ordem decrescente
+                };
+
+                ArrayList<String[]> listaOrdenada = new ArrayList<>(set);
+                listaOrdenada.sort(comparador);
+
+                System.out.println("SET");
+                for (String[] l: set) {
+                    System.out.println(l[0]);
+                }
+                System.out.println("MAPA FREQS");
+                for (String l: mapaFreqs.keySet()) {
+                    System.out.println(l + " -- " + mapaFreqs.get(l));
+                }
+                System.out.println("COMPARADOR");
+                for (String[] l: listaOrdenada) {
+                    System.out.println(l[0]);
+                }
+
+
+                return set;
 
             } catch (Exception e) {
                 System.out.println("Error" + e);
@@ -216,7 +256,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
                 for (Storage s : barrels) {
                     int porto = Integer.parseInt(s.getPorto());
                     StorageBarrel_I sI = (StorageBarrel_I) LocateRegistry.getRegistry(porto).lookup("Storage_Barrel");
-                    if ((aux = sI.obterLinks(url)) != null){
+                    if ((aux = sI.obterLinks(url)) != null) {
                         lista.add(aux);
                     }
                 }
@@ -225,17 +265,17 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
             } else {
                 System.out.println("Permissoes insuficientes...");
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             System.out.println("Erro: " + e);
         }
 
     }
 
-    public ArrayList<Storage> obterInfoBarrels() throws RemoteException{
+    public ArrayList<Storage> obterInfoBarrels() throws RemoteException {
         return barrels;
     }
 
-    public ArrayList<DownloaderInfo> obterInfoDownloaders() throws RemoteException{
+    public ArrayList<DownloaderInfo> obterInfoDownloaders() throws RemoteException {
         return downloaders;
     }
 
