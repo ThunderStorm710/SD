@@ -159,7 +159,7 @@ public class Downloader implements Runnable{
                     String di = "1|" + id + "|" + PORT_2;
 
                     byte[] buffer2 = di.getBytes();
-
+                    socket2 = new MulticastSocket(PORT);
                     InetAddress group2 = InetAddress.getByName(MULTICAST_ADDRESS_2);
                     DatagramPacket packet2 = new DatagramPacket(buffer2, buffer2.length, group2, PORT_2);
 

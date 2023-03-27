@@ -1,4 +1,8 @@
 import java.io.*;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.rmi.*;
 import java.rmi.registry.LocateRegistry;
@@ -6,18 +10,42 @@ import java.rmi.registry.Registry;
 import java.rmi.server.*;
 
 
-public class SearchModule extends UnicastRemoteObject implements SearchModule_I {
+public class SearchModule extends UnicastRemoteObject implements SearchModule_I, Runnable{
 
 
     private ArrayList<ClienteInfo> clientes;
     private ArrayList<Storage> barrels;
     private ArrayList<DownloaderInfo> downloaders;
-
+    transient Thread t;
     public SearchModule() throws RemoteException {
         super();
         this.clientes = new ArrayList<>();
         this.barrels = new ArrayList<>();
         this.downloaders = new ArrayList<>();
+        t = new Thread(this);
+        t.start();
+    }
+
+    public void run() {
+        MulticastSocket socket = null;
+        String MULTICAST_ADDRESS = "224.3.2.2";
+        int PORT = 4322;
+        try {
+            socket = new MulticastSocket(PORT);  // create socket and bind it
+            InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
+            socket.joinGroup(group);
+            while (true) {
+                byte[] buffer = new byte[254];
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                socket.receive(packet);
+                String message = new String(packet.getData(), 0, packet.getLength());
+                System.out.println(message);
+            }
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -163,6 +191,8 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
         return false;
     }
 
+
+
     public ClienteInfo verificarRegisto(String nome, String email, String username, String password) {
         boolean flag = true;
         ClienteInfo c1 = null;
@@ -292,14 +322,14 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
 
 
     public static void main(String[] args) {
-
         try {
-            SearchModule sM = new SearchModule();
-            sM.lerFichClientes();
+            SearchModule sm1 = new SearchModule();
+            sm1.lerFichClientes();
 
             Registry r = LocateRegistry.createRegistry(1100);
-            r.rebind("Search_Module", sM);
+            r.rebind("Search_Module", sm1);
 
+            sm1.t.join();
 
         } catch (Exception e) {
             System.out.println("Error" + e);

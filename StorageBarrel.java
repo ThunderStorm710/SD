@@ -157,8 +157,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                 try {
                     socket2 = new MulticastSocket();
                     InetAddress enderecoIP = InetAddress.getLocalHost();
-                    String di = "1|" + enderecoIP.getHostAddress() + "|"+ porto + "|" + gama_palavra ;
-                    System.out.println(di);
+                    String di = "2|" + enderecoIP.getHostAddress() + "|"+ porto + "|" + gama_palavra ;
                     byte[] buffer2 = di.getBytes();
 
                     InetAddress group2 = InetAddress.getByName(MULTICAST_ADDRESS_2);
