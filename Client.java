@@ -195,7 +195,17 @@ public class Client {
                     } else if (opcao.equals("3")) {
                         System.out.print("Insira um link url: ");
                         linha = sc.nextLine();
-                        h.obterLinks(cliente, linha);
+                        System.out.println();
+                        ArrayList<HashSet<String>> lista = h.obterLinks(cliente, linha);
+                        if (lista.size() == 0){
+                            System.out.println("Ligacao URL nao encontrada...");
+                        } else {
+                            for (HashSet<String> cadeia: lista) {
+                                for (String s: cadeia){
+                                    System.out.println(s);
+                                }
+                            }
+                        }
 
                     } else if (opcao.equals("4")) {
                         System.out.println("--- Informacoes gerais do sistema ---");

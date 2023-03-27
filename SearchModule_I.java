@@ -13,7 +13,7 @@ public interface SearchModule_I extends Remote {
 
     public boolean adicionarInfoInicialBarrel(String gama, String porto) throws RemoteException;
 
-    public void obterLinks(ClienteInfo cliente, String url) throws RemoteException;
+    public ArrayList<HashSet<String>> obterLinks(ClienteInfo cliente, String url) throws RemoteException;
 
     public ArrayList<Storage> obterInfoBarrels() throws RemoteException;
 

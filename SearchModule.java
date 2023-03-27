@@ -249,7 +249,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
         return flag;
     }
 
-    public void obterLinks(ClienteInfo cliente, String url) throws RemoteException {
+    public ArrayList<HashSet<String>> obterLinks(ClienteInfo cliente, String url) throws RemoteException {
         ArrayList<HashSet<String>> lista = new ArrayList<>();
         HashSet<String> aux;
         try {
@@ -271,7 +271,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
         } catch (Exception e) {
             System.out.println("Erro: " + e);
         }
-
+        return lista;
     }
 
     public ArrayList<Storage> obterInfoBarrels() throws RemoteException {
