@@ -40,6 +40,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
         HashMap<String, Integer> mapaFreqs = new HashMap<>();
         HashSet<String[]> aux;
         int porto, freq;
+        boolean flag = true;
 
         if (verificarCliente(cliente)) {
             try {
@@ -56,8 +57,15 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
                             aux = sI.obterInfoBarrel(palavra);
                             lista.add(aux);
                             System.out.println(aux);
+                            if (flag) {
+                                flag = false;
+                                sI.adicionarPesquisa(pesquisa);
+
+                            }
+                            break;
 
                         }
+
                     }
                     System.out.println(palavra);
 
@@ -90,15 +98,15 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
                 listaOrdenada.sort(comparador);
 
                 System.out.println("SET");
-                for (String[] l: set) {
+                for (String[] l : set) {
                     System.out.println(l[0]);
                 }
                 System.out.println("MAPA FREQS");
-                for (String l: mapaFreqs.keySet()) {
+                for (String l : mapaFreqs.keySet()) {
                     System.out.println(l + " -- " + mapaFreqs.get(l));
                 }
                 System.out.println("COMPARADOR");
-                for (String[] l: listaOrdenada) {
+                for (String[] l : listaOrdenada) {
                     System.out.println(l[0]);
                 }
                 String cadeia = "abcdefghijklmnopqrstuvwxyz";
