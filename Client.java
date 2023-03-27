@@ -77,7 +77,7 @@ public class Client {
         return c1;
     }
 
-    public static void indexarURL(SearchModule_I h, ClienteInfo cliente) throws RemoteException{
+    public static void indexarURL(SearchModule_I h, ClienteInfo cliente) throws RemoteException {
         Scanner sc = new Scanner(System.in);
         System.out.print("Insira um URL: ");
         String opcao = sc.nextLine();
@@ -85,24 +85,25 @@ public class Client {
         h.indexarURL(cliente, opcao);
     }
 
-    public static void consultarListaPaginas(SearchModule_I h, ClienteInfo cliente) throws RemoteException{
+    public static void consultarListaPaginas(SearchModule_I h, ClienteInfo cliente) throws RemoteException {
         Scanner sc = new Scanner(System.in);
         System.out.print("Insira um link url: ");
         String linha = sc.nextLine();
         System.out.println();
 
         ArrayList<HashSet<String>> lista = h.obterLinks(cliente, linha);
-        if (lista.size() == 0){
+        if (lista.size() == 0) {
             System.out.println("Ligacao URL nao encontrada...");
         } else {
-            for (HashSet<String> cadeia: lista) {
-                for (String s: cadeia){
+            for (HashSet<String> cadeia : lista) {
+                for (String s : cadeia) {
                     System.out.println(s);
                 }
             }
         }
     }
-    public static void obterInfoGerais(SearchModule_I h) throws RemoteException{
+
+    public static void obterInfoGerais(SearchModule_I h) throws RemoteException {
 
         System.out.println("--- Informacoes gerais do sistema ---");
         ArrayList<Storage> barrels = h.obterInfoBarrels();
@@ -122,7 +123,7 @@ public class Client {
         }
     }
 
-    public static void realizarPesquisa(SearchModule_I h, ClienteInfo cliente) throws RemoteException{
+    public static void realizarPesquisa(SearchModule_I h, ClienteInfo cliente) throws RemoteException {
         Scanner sc = new Scanner(System.in);
         System.out.print("Pesquisa: ");
         String linha = sc.nextLine();
@@ -138,32 +139,59 @@ public class Client {
                 }
                 label:
                 while (true) {
-                    System.out.println("""
-                                            1 - Anterior
-                                            2 - Proximo
-                                            3 - Sair
-                                            """);
+                    if (i >= 10 && i < lista.size()) {
+                        System.out.println("""
+                                ---------------
+                                \t1 - Anterior
+                                \t2 - Proximo
+                                \t3 - Sair
+                                ---------------
+                                """);
+                    } else if (i >= lista.size()) {
+                        System.out.println("""
+                                ---------------
+                                \t1 - Anterior
+                                \t3 - Sair
+                                ---------------
+                                """);
+                    } else {
+                        System.out.println("""
+                                ---------------
+                                \t2 - Proximo
+                                \t3 - Sair
+                                ---------------
+                                """);
+                    }
+
                     String opcao = sc.nextLine();
 
                     switch (opcao) {
                         case "1":
                             if (i >= 10) {
-                                contador = i;
-                                if (contador >= lista.size()) {
-                                    contador = i = lista.size() - 1;
+                                if (i >= lista.size()) {
+                                    i = lista.size() - 1;
                                 }
-                                for (; i > 0 && contador - i < 10; i--) {
-                                    System.out.println(Arrays.toString(lista.get(i)));
-                                }
+                                contador = i - 10;
 
+                                for (; contador < i; contador++) {
+                                    System.out.println(Arrays.toString(lista.get(contador)));
+                                }
+                                i -= 10;
+                            } else {
+                                contador = 0;
+                                for (; contador < i; contador++) {
+                                    System.out.println(Arrays.toString(lista.get(contador)));
+                                }
+                                i = 0;
                             }
                             break;
                         case "2":
                             contador = i;
                             if (i < lista.size()) {
-                                for (; i < lista.size() && i - contador < 10; i++) {
-                                    System.out.println(Arrays.toString(lista.get(i)));
+                                for (; contador < lista.size() && contador < i + 10; contador++) {
+                                    System.out.println(Arrays.toString(lista.get(contador)));
                                 }
+                                i = contador;
                             }
                             break;
                         case "3":
@@ -187,7 +215,7 @@ public class Client {
 
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
-        String opcao, linha;
+        String opcao;
         boolean entrada = false;
         ClienteInfo cliente = null;
         try {
