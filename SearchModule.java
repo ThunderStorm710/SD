@@ -28,7 +28,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
                 System.out.println("Vou adicionar o url " + url + " a fila!");
                 h.recUrl(url);
 
-
             } catch (Exception e) {
                 System.out.println("Error" + e);
             }
@@ -40,7 +39,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
         ArrayList<HashSet<String[]>> lista = new ArrayList<>();
         HashMap<String, Integer> mapaFreqs = new HashMap<>();
         HashSet<String[]> aux;
-        HashSet<String> auxURL;
         int porto, freq;
 
         if (verificarCliente(cliente)) {
@@ -102,6 +100,11 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I 
                 System.out.println("COMPARADOR");
                 for (String[] l: listaOrdenada) {
                     System.out.println(l[0]);
+                }
+                String cadeia = "abcdefghijklmnopqrstuvwxyz";
+                for (int i = 0; i < 20; i++) {
+                    String[] aux1 = {cadeia.charAt(i) + " "};
+                    set.add(aux1);
                 }
 
 

@@ -18,6 +18,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
     File fClientesObjHashUrl;
     HashMap<String, HashSet<String[]>> index;
     HashMap<String, HashSet<String>> urlHashmap;
+    HashMap<String, Integer> mapaPesquisas;
     private static final int MAX_PACKET_SIZE = 1024;
     ArrayList<String> stopwords;
     int type_t;
@@ -30,6 +31,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         this.index = new HashMap<>();
         this.urlHashmap = new HashMap<>();
         this.stopwords = new ArrayList<>();
+        this.mapaPesquisas = new HashMap<>();
         this.fClientesObj = new File(nome_fich);
         this.fClientesObjHashUrl = new File(nome_fich2);
         this.type_t = type_t;
@@ -260,8 +262,13 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         return palavras;
     }
 
-
-
+    public void adicionarPesquisa(String pesquisa) throws RemoteException{
+        if (mapaPesquisas.containsKey(pesquisa)){
+            mapaPesquisas.put(pesquisa,mapaPesquisas.get(pesquisa) + 1);
+        } else {
+            mapaPesquisas.put(pesquisa, 1);
+        }
+    }
 
     public HashSet<String[]> obterInfoBarrel(String palavra) throws RemoteException {
         index = lerFichObjetos();

@@ -2,21 +2,11 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.util.*;
 
-public class Client implements Runnable {
-    Thread t;
+public class Client {
 
     public Client() {
-        t = new Thread(this);
-        t.start();
     }
 
-    public void run() {
-        try {
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     public static ClienteInfo login(SearchModule_I h) {
         boolean flag = false;
@@ -155,7 +145,6 @@ public class Client implements Runnable {
                                 for (i = 0; i < lista.size() && i < 10; i++) {
                                     System.out.println(Arrays.toString(lista.get(i)));
                                 }
-                                opcao = "";
                                 label:
                                 while (true) {
                                     System.out.println("""
@@ -167,17 +156,23 @@ public class Client implements Runnable {
 
                                     switch (opcao) {
                                         case "1":
-                                            if (i > 10) {
+                                            if (i >= 10) {
                                                 contador = i;
+                                                if (contador >= lista.size()) {
+                                                    contador = i = lista.size() - 1;
+                                                }
                                                 for (; i > 0 && contador - i < 10; i--) {
                                                     System.out.println(Arrays.toString(lista.get(i)));
                                                 }
+
                                             }
                                             break;
                                         case "2":
                                             contador = i;
-                                            for (; i < lista.size() && i - contador < 10; i++) {
-                                                System.out.println(Arrays.toString(lista.get(i)));
+                                            if (i < lista.size()) {
+                                                for (; i < lista.size() && i - contador < 10; i++) {
+                                                    System.out.println(Arrays.toString(lista.get(i)));
+                                                }
                                             }
                                             break;
                                         case "3":
@@ -232,7 +227,8 @@ public class Client implements Runnable {
             }
 
 
-        } catch (java.rmi.RemoteException | java.rmi.NotBoundException e) {
+        } catch (java.rmi.RemoteException |
+                java.rmi.NotBoundException e) {
             System.out.println("RemoteException");
         }
     }

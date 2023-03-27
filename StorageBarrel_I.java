@@ -7,4 +7,6 @@ public interface StorageBarrel_I extends Remote {
 
     public HashSet<String> obterLinks(String url) throws RemoteException;
 
+    public void adicionarPesquisa(String pesquisa) throws RemoteException;
+
 }
