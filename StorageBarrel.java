@@ -149,6 +149,34 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                 System.out.println("Interrupted");
             }
         }
+        else if (type_t == 2){
+            final String MULTICAST_ADDRESS_2 = "224.3.2.2";
+            final int PORT_2 = 4322;
+            MulticastSocket socket2 = null;
+            while(true) {
+                try {
+                    socket2 = new MulticastSocket();
+                    InetAddress enderecoIP = InetAddress.getLocalHost();
+                    String di = "1|" + enderecoIP.getHostAddress() + "|"+ porto + "|" + gama_palavra ;
+                    System.out.println(di);
+                    byte[] buffer2 = di.getBytes();
+
+                    InetAddress group2 = InetAddress.getByName(MULTICAST_ADDRESS_2);
+                    DatagramPacket packet2 = new DatagramPacket(buffer2, buffer2.length, group2, PORT_2);
+
+                    socket2.send(packet2);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    socket2.close();
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     public void escreverFichObjetosHashmap(HashMap<String, HashSet<String>> urlsHash) {
@@ -308,11 +336,13 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
         StorageBarrel s1 = new StorageBarrel(args[0], args[1], 0, args[2], args[3]);
         StorageBarrel s2 = new StorageBarrel(args[0], args[1],1, args[2], args[3]);//"fich_url1",0,"[a-z]","1000"
+        StorageBarrel s3 = new StorageBarrel(args[0], args[1],2, args[2], args[3]);
         try {
             Registry r = LocateRegistry.createRegistry(Integer.parseInt(args[3]));
             r.rebind("Storage_Barrel", s2);
             s1.t.join();
             s2.t.join();
+            s3.t.join();
 
         } catch (InterruptedException e) {
             System.out.println("Interrupted");
