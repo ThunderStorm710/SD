@@ -125,7 +125,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                 ArrayList<String[]> listaOrdenada = new ArrayList<>(set);
                 listaOrdenada.sort(comparador);
 
-                System.out.println("SET");
+                /*System.out.println("SET");
                 for (String[] l : set) {
                     System.out.println(l[0]);
                 }
@@ -136,12 +136,14 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                 System.out.println("COMPARADOR");
                 for (String[] l : listaOrdenada) {
                     System.out.println(l[0]);
-                }
-                String cadeia = "abcdefghijklmnopqrstuvwxyz";
+                }*/
+
+
+                /*String cadeia = "abcdefghijklmnopqrstuvwxyz";
                 for (int i = 0; i < 20; i++) {
                     String[] aux1 = {cadeia.charAt(i) + " "};
                     set.add(aux1);
-                }
+                }*/
 
 
                 return set;
