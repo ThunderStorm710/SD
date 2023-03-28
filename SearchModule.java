@@ -2,7 +2,6 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
-import java.net.UnknownHostException;
 import java.util.*;
 import java.rmi.*;
 import java.rmi.registry.LocateRegistry;
@@ -10,13 +9,14 @@ import java.rmi.registry.Registry;
 import java.rmi.server.*;
 
 
-public class SearchModule extends UnicastRemoteObject implements SearchModule_I, Runnable{
+public class SearchModule extends UnicastRemoteObject implements SearchModule_I, Runnable {
 
 
     private ArrayList<ClienteInfo> clientes;
     private ArrayList<Storage> barrels;
     private ArrayList<DownloaderInfo> downloaders;
     transient Thread t;
+
     public SearchModule() throws RemoteException {
         super();
         this.clientes = new ArrayList<>();
@@ -47,8 +47,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
     }
 
 
-
-
     synchronized public void indexarURL(ClienteInfo cliente, String url) throws RemoteException {
         if (verificarCliente(cliente)) {
             try {
@@ -63,14 +61,36 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         }
     }
 
-    synchronized public void obterInfoFicheiros(String gama, String ip, String porto) throws RemoteException{
-        for (Storage s: barrels) {
-            if (!s.getIp().equals(ip) || !s.getGama().equals(gama) || !s.getPorto().equals(porto)){
+    synchronized public HashMap<String, HashSet<String[]>> obterInfoFicheiros(String gama, String ip, String porto) throws RemoteException {
+        try {
+            for (Storage s : barrels) {
+                if ((!s.getIp().equals(ip) || !s.getPorto().equals(porto)) && s.getGama().equals(gama)) {
+                    StorageBarrel_I b = (StorageBarrel_I) LocateRegistry.getRegistry(Integer.parseInt(porto)).lookup("Storage_Barrel");
+                    return b.obterIndex();
+                }
 
-                break;
             }
-
+        } catch (NotBoundException e) {
+            System.out.println("Erro: " + e);
         }
+
+        return null;
+    }
+
+    synchronized public HashMap<String, HashSet<String>> obterURLFicheiros(String gama, String ip, String porto) throws RemoteException {
+        try {
+            for (Storage s : barrels) {
+                if ((!s.getIp().equals(ip) || !s.getPorto().equals(porto)) && s.getGama().equals(gama)) {
+                    StorageBarrel_I b = (StorageBarrel_I) LocateRegistry.getRegistry(Integer.parseInt(porto)).lookup("Storage_Barrel");
+                    return b.obterURLMap();
+                }
+
+            }
+        } catch (NotBoundException e) {
+            System.out.println("Erro: " + e);
+        }
+
+        return null;
     }
 
     synchronized public HashSet<String[]> pesquisarPaginas(ClienteInfo cliente, String pesquisa) throws RemoteException {
@@ -175,7 +195,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         }
         return false;
     }
-
 
 
     public ClienteInfo verificarRegisto(String nome, String email, String username, String password) {

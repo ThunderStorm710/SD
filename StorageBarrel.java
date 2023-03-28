@@ -102,10 +102,9 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                         System.out.println("String em codificacao invalida...");
                     } catch (StreamCorruptedException | InvalidObjectException e) {
                         System.out.println("Dados de objeto inválidos...");
-                    } catch (ClassCastException | IOException e){
+                    } catch (ClassCastException | IOException e) {
                         System.out.println("Classe não encontrada...");
                     }
-
 
 
                     //escreverFichObjetosHashmap(urlsLigacoes);
@@ -139,6 +138,9 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                 if (!h.adicionarInfoInicialBarrel(gama_palavra, ip, porto)) {
                     System.out.println("Nao foi possivel ligar ao Search Module...");
                     return;
+                } else {
+                    index = h.obterInfoFicheiros(gama_palavra, ip, porto);
+                    urlHashmap = h.obterURLFicheiros(gama_palavra, ip, porto);
                 }
             } catch (RemoteException | java.rmi.NotBoundException e) {
                 System.out.println("Interrupted");
@@ -173,6 +175,15 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
             }
         }
     }
+
+    public HashMap<String, HashSet<String[]>> obterIndex() throws RemoteException {
+        return lerFichObjetos();
+    }
+
+    public HashMap<String, HashSet<String>> obterURLMap() throws RemoteException {
+        return lerFichObjetosHashmap();
+    }
+
 
     public void escreverFichObjetosHashmap(HashMap<String, HashSet<String>> urlsHash) {
 
