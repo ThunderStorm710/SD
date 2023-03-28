@@ -1,5 +1,6 @@
 import java.rmi.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 public interface SearchModule_I extends Remote {
@@ -18,5 +19,10 @@ public interface SearchModule_I extends Remote {
     public ArrayList<Storage> obterInfoBarrels() throws RemoteException;
 
     public ArrayList<DownloaderInfo> obterInfoDownloaders() throws RemoteException;
+
+    public HashMap<String, HashSet<String[]>> obterInfoFicheiros(String gama, String ip, String porto) throws RemoteException;
+
+    public HashMap<String, HashSet<String>> obterURLFicheiros(String gama, String ip, String porto) throws RemoteException;
+
 
 }
