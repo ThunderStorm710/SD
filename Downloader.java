@@ -53,6 +53,7 @@ public class Downloader implements Runnable {
                         ArrayList<String> lista = new ArrayList<>();
 
                         if (url != null) {
+                            String citacao;
                             System.out.println(url);
 
                             Document doc = Jsoup.connect(url).ignoreHttpErrors(true).get();
@@ -64,7 +65,12 @@ public class Downloader implements Runnable {
                             lista.add(title);
 
                             if (firstParagraph != null) {
+                                citacao = firstParagraph.text();
                                 lista.add(firstParagraph.text());
+                            }
+                            else{
+                                citacao = "";
+                                lista.add("");
                             }
 
 
@@ -75,21 +81,13 @@ public class Downloader implements Runnable {
                                 String tok = tokens.nextToken().toLowerCase().replaceAll("[,.\\[\\]{}!?:;()<>+*/%]", "");
                                 lista.add(tok);
                             }
-                            System.out.println("++++++++++++");
-                            for (String numero : lista) {
-                                System.out.println(numero);
-                            }
-
-                            System.out.println("++++++++++++");
-                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                            ObjectOutputStream oos = new ObjectOutputStream(baos);
-                            oos.writeObject(lista);
-                            byte[] serializedData = baos.toByteArray();
-
                             InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
-                            DatagramPacket packet = new DatagramPacket(serializedData, serializedData.length, group, PORT);
-
-                            socket.send(packet);
+                            for(int i = 3; i<lista.size();i++) {
+                                String frase = "1|" + lista.get(i) + "|" + url +"|" + title + "|" + citacao;
+                                byte[] buffer = frase.getBytes();
+                                DatagramPacket packet = new DatagramPacket(buffer, buffer.length, group, PORT);
+                                socket.send(packet);
+                            }
 
 
                             if (urlsLig != null) {

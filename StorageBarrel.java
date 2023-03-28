@@ -52,40 +52,19 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                 InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
                 socket.joinGroup(group);
                 while (true) {
-                    byte[] buffer = new byte[50000];
+                    byte[] buffer = new byte[1024];
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                     socket.receive(packet);
 
                     System.out.println("Received packet from " + packet.getAddress().getHostAddress() + ":" + packet.getPort() + " with message:");
-                    try {
-                        ByteArrayInputStream bais = new ByteArrayInputStream(packet.getData());
-                        ObjectInputStream ois = new ObjectInputStream(bais);
-                        ArrayList<String> receivedList = (ArrayList<String>) ois.readObject();
 
-                        for (String l : receivedList) {
-                            System.out.println(l);
-                        }
+                    String message = new String(packet.getData(), 0, packet.getLength());
+                    System.out.println(message);
 
-                        escreverFichObjetos(receivedList);
-                        index = lerFichObjetos();
 
-                    } catch (UTFDataFormatException e) {
-                        System.out.println("String em codificacao invalida...");
-                    } catch (StreamCorruptedException e) {
-                        System.out.println("Dados de objeto inválidos...");
-                    }
-                    /*
-                    byte[] buffer2 = new byte[50000];
-                    DatagramPacket packet2 = new DatagramPacket(buffer2, buffer2.length);
-                    socket.receive(packet2);
+                    escreverFichObjetos(message);
+                    index = lerFichObjetos();
 
-                    System.out.println("Received packet from " + packet2.getAddress().getHostAddress() + ":" + packet2.getPort() + " with message:");
-                    ByteArrayInputStream bais2 = new ByteArrayInputStream(packet2.getData());
-                    ObjectInputStream ois2 = new ObjectInputStream(bais2);
-
-                    HashMap<String, HashSet<String>> urlsLigacoes = (HashMap<String, HashSet<String>>) ois2.readObject();
-
-                     */
 
 
                     byte[] data = new byte[0];
@@ -229,42 +208,42 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         return urlsHash;
     }
 
-    public void escreverFichObjetos(ArrayList<String> receivedList) {
-        String titulo = receivedList.get(1);
-        String url = receivedList.get(0);
-        String citacao = receivedList.get(2);
-        receivedList.remove(2);
-        receivedList.remove(1);
-        receivedList.remove(0);
+    public void escreverFichObjetos(String mensagem) {
+        String[] lista = mensagem.split("|");
+        String titulo = lista[3];
+        String url = lista[2];
+        String citacao = lista[4];
+
         try {
             FileOutputStream iOS = new FileOutputStream(fClientesObj);
             ObjectOutputStream oOS = new ObjectOutputStream(iOS);
-            for (String palavra : receivedList) {
-                // Cria um array de valores
-                String[] valores = {url, titulo, citacao};
-                String p_ascii = Normalizer.normalize(palavra, Normalizer.Form.NFD);
 
-                if (!palavra.equals("") && !stopwords.contains(palavra) && Character.toLowerCase(p_ascii.charAt(0)) >= Character.toLowerCase(gama_palavra.charAt(1)) && Character.toLowerCase(p_ascii.charAt(0)) <= Character.toLowerCase(gama_palavra.charAt(3))) {
-                    if (!index.containsKey(palavra)) {
-                        // Se não existir, cria um novo conjunto de valores
-                        HashSet<String[]> values = new HashSet<>();
-                        values.add(valores);
-                        index.put(palavra, values);
-                    } else {
-                        HashSet<String[]> v = index.get(palavra);
-                        int flag = 0;
-                        for (String[] va : v) {
-                            if (va[0].equals(valores[0])) {
-                                flag = 1;
-                                break;
-                            }
+            // Cria um array de valores
+            String[] valores = {url, titulo, citacao};
+
+            String palavra = lista[1];
+            String p_ascii = Normalizer.normalize(palavra, Normalizer.Form.NFD);
+            if (!palavra.equals("") && !stopwords.contains(palavra) && Character.toLowerCase(p_ascii.charAt(0)) >= Character.toLowerCase(gama_palavra.charAt(1)) && Character.toLowerCase(p_ascii.charAt(0)) <= Character.toLowerCase(gama_palavra.charAt(3))) {
+                if (!index.containsKey(palavra)) {
+                    // Se não existir, cria um novo conjunto de valores
+                    HashSet<String[]> values = new HashSet<>();
+                    values.add(valores);
+                    index.put(palavra, values);
+                } else {
+                    HashSet<String[]> v = index.get(palavra);
+                    int flag = 0;
+                    for (String[] va : v) {
+                        if (va[0].equals(valores[0])) {
+                            flag = 1;
+                            break;
                         }
-                        if (flag == 0) {
-                            index.get(palavra).add(valores);
-                        }
+                    }
+                    if (flag == 0) {
+                        index.get(palavra).add(valores);
                     }
                 }
             }
+
             oOS.writeObject(index);
             oOS.close();
         } catch (IOException e) {
