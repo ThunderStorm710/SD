@@ -3,16 +3,13 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.UTFDataFormatException;
+import java.io.*;
 import java.net.*;
 import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.*;
 
-public class Downloader implements Runnable{
+public class Downloader implements Runnable {
 
     HashMap<String, HashSet<String>> urlsLig;
     private static final int MAX_CHUNK_SIZE = 1024;
@@ -24,6 +21,7 @@ public class Downloader implements Runnable{
     Thread t;
     int type_t;
     String id;
+
     public Downloader(int type_t, String id) {
         this.urlsLig = new HashMap<>();
         t = new Thread(this);
@@ -95,24 +93,31 @@ public class Downloader implements Runnable{
 
 
                             if (urlsLig != null) {
-                                ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-                                ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
-                                objectStream.writeObject(urlsLig);
-                                byte[] data = byteStream.toByteArray();
+                                try {
+                                    ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+                                    ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
+                                    objectStream.writeObject(urlsLig);
+                                    byte[] data = byteStream.toByteArray();
 
-                                int offset = 0;
-                                while (offset < data.length) {
-                                    int chunkSize = Math.min(MAX_CHUNK_SIZE, data.length - offset);
-                                    byte[] chunkData = new byte[chunkSize];
-                                    System.arraycopy(data, offset, chunkData, 0, chunkSize);
+                                    int offset = 0;
+                                    while (offset < data.length) {
+                                        int chunkSize = Math.min(MAX_CHUNK_SIZE, data.length - offset);
+                                        byte[] chunkData = new byte[chunkSize];
+                                        System.arraycopy(data, offset, chunkData, 0, chunkSize);
 
-                                    DatagramPacket packet2 = new DatagramPacket(chunkData, chunkSize, group, PORT);
+                                        DatagramPacket packet2 = new DatagramPacket(chunkData, chunkSize, group, PORT);
 
-                                    socket.send(packet2);
+                                        socket.send(packet2);
 
-                                    offset += chunkSize;
+                                        offset += chunkSize;
+                                    }
+                                } catch (UTFDataFormatException e) {
+                                    System.out.println("String em codificacao invalida...");
+                                } catch (StreamCorruptedException e) {
+                                    System.out.println("Dados de objeto inválidos...");
+                                } catch (IOException | ClassCastException e) {
+                                    System.out.println("Erro: " + e);
                                 }
-
                             }
 
 
@@ -154,7 +159,7 @@ public class Downloader implements Runnable{
         }
         if (type_t == 2) {
             MulticastSocket socket2 = null;
-            while(true) {
+            while (true) {
                 try {
                     String di = "1|" + id + "|" + PORT_2;
 
@@ -185,7 +190,7 @@ public class Downloader implements Runnable{
             d1.t.join();
             d2.t.join();
 
-        } catch(InterruptedException e) {
+        } catch (InterruptedException e) {
             System.out.println("Interrupted");
         }
     }

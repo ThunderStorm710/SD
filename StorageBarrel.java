@@ -56,11 +56,23 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                     socket.receive(packet);
 
                     System.out.println("Received packet from " + packet.getAddress().getHostAddress() + ":" + packet.getPort() + " with message:");
-                    ByteArrayInputStream bais = new ByteArrayInputStream(packet.getData());
-                    ObjectInputStream ois = new ObjectInputStream(bais);
-                    ArrayList<String> receivedList = (ArrayList<String>) ois.readObject();
+                    try {
+                        ByteArrayInputStream bais = new ByteArrayInputStream(packet.getData());
+                        ObjectInputStream ois = new ObjectInputStream(bais);
+                        ArrayList<String> receivedList = (ArrayList<String>) ois.readObject();
 
+                        for (String l : receivedList) {
+                            System.out.println(l);
+                        }
 
+                        escreverFichObjetos(receivedList);
+                        index = lerFichObjetos();
+
+                    } catch (UTFDataFormatException e) {
+                        System.out.println("String em codificacao invalida...");
+                    } catch (StreamCorruptedException e) {
+                        System.out.println("Dados de objeto inválidos...");
+                    }
                     /*
                     byte[] buffer2 = new byte[50000];
                     DatagramPacket packet2 = new DatagramPacket(buffer2, buffer2.length);
@@ -96,20 +108,25 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                     try {
                         ByteArrayInputStream byteStream = new ByteArrayInputStream(data);
                         ObjectInputStream objectStream = new ObjectInputStream(byteStream);
-                        HashMap<String, HashSet<String>> urlsLigacoes = (HashMap<String, HashSet<String>>) objectStream.readObject();
+                        //HashMap<String, HashSet<String>> urlsLigacoes = (HashMap<String, HashSet<String>>) objectStream.readObject();
+                        Object obj = objectStream.readObject();
+                        if (obj instanceof HashMap) {
+                            HashMap<String, HashSet<String>> urlsLigacoes = (HashMap<String, HashSet<String>>) obj;
+                            escreverFichObjetosHashmap(urlsLigacoes);
+                            urlHashmap = lerFichObjetosHashmap();
+                            // fazer o que precisa ser feito com urlsLigacoes
+                        }
 
-                        escreverFichObjetosHashmap(urlsLigacoes);
-                        urlHashmap = lerFichObjetosHashmap();
+
                     } catch (UTFDataFormatException e) {
                         System.out.println("String em codificacao invalida...");
+                    } catch (StreamCorruptedException | InvalidObjectException e) {
+                        System.out.println("Dados de objeto inválidos...");
+                    } catch (ClassCastException | IOException e){
+                        System.out.println("Classe não encontrada...");
                     }
 
-                    for (String l : receivedList) {
-                        System.out.println(l);
-                    }
 
-                    escreverFichObjetos(receivedList);
-                    index = lerFichObjetos();
 
                     //escreverFichObjetosHashmap(urlsLigacoes);
                     //urlHashmap = lerFichObjetosHashmap();
@@ -125,10 +142,6 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                         }
                         System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
                     }
-
-
-
-
 
 
                 }
@@ -148,16 +161,15 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
             } catch (RemoteException | java.rmi.NotBoundException e) {
                 System.out.println("Interrupted");
             }
-        }
-        else if (type_t == 2){
+        } else if (type_t == 2) {
             final String MULTICAST_ADDRESS_2 = "224.3.2.2";
             final int PORT_2 = 4322;
             MulticastSocket socket2 = null;
-            while(true) {
+            while (true) {
                 try {
                     socket2 = new MulticastSocket();
                     InetAddress enderecoIP = InetAddress.getLocalHost();
-                    String di = "2|" + enderecoIP.getHostAddress() + "|"+ porto + "|" + gama_palavra ;
+                    String di = "2|" + enderecoIP.getHostAddress() + "|" + porto + "|" + gama_palavra;
                     byte[] buffer2 = di.getBytes();
 
                     InetAddress group2 = InetAddress.getByName(MULTICAST_ADDRESS_2);
@@ -289,9 +301,9 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         return palavras;
     }
 
-    public void adicionarPesquisa(String pesquisa) throws RemoteException{
-        if (mapaPesquisas.containsKey(pesquisa)){
-            mapaPesquisas.put(pesquisa,mapaPesquisas.get(pesquisa) + 1);
+    public void adicionarPesquisa(String pesquisa) throws RemoteException {
+        if (mapaPesquisas.containsKey(pesquisa)) {
+            mapaPesquisas.put(pesquisa, mapaPesquisas.get(pesquisa) + 1);
         } else {
             mapaPesquisas.put(pesquisa, 1);
         }
@@ -302,7 +314,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         return index.get(palavra);
     }
 
-    public HashSet<String> obterLinks(String url) throws RemoteException{
+    public HashSet<String> obterLinks(String url) throws RemoteException {
         urlHashmap = lerFichObjetosHashmap();
         System.out.println(urlHashmap);
         System.out.println("------------------------------------------");
@@ -334,8 +346,8 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         System.out.println("ARGS" + args[0] + " --- " + args[3]);
 
         StorageBarrel s1 = new StorageBarrel(args[0], args[1], 0, args[2], args[3]);
-        StorageBarrel s2 = new StorageBarrel(args[0], args[1],1, args[2], args[3]);//"fich_url1",0,"[a-z]","1000"
-        StorageBarrel s3 = new StorageBarrel(args[0], args[1],2, args[2], args[3]);
+        StorageBarrel s2 = new StorageBarrel(args[0], args[1], 1, args[2], args[3]);//"fich_url1",0,"[a-z]","1000"
+        StorageBarrel s3 = new StorageBarrel(args[0], args[1], 2, args[2], args[3]);
         try {
             Registry r = LocateRegistry.createRegistry(Integer.parseInt(args[3]));
             r.rebind("Storage_Barrel", s2);
