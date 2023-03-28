@@ -41,12 +41,12 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                 String message = new String(packet.getData(), 0, packet.getLength());
                 System.out.println(message);
             }
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
+
 
 
     synchronized public void indexarURL(ClienteInfo cliente, String url) throws RemoteException {
@@ -63,6 +63,16 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         }
     }
 
+    synchronized public void obterInfoFicheiros(String gama, String ip, String porto) throws RemoteException{
+        for (Storage s: barrels) {
+            if (!s.getIp().equals(ip) || !s.getGama().equals(gama) || !s.getPorto().equals(porto)){
+
+                break;
+            }
+
+        }
+    }
+
     synchronized public HashSet<String[]> pesquisarPaginas(ClienteInfo cliente, String pesquisa) throws RemoteException {
         ArrayList<HashSet<String[]>> lista = new ArrayList<>();
         HashMap<String, Integer> mapaFreqs = new HashMap<>();
@@ -73,7 +83,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         if (verificarCliente(cliente)) {
             try {
                 String[] palavras = pesquisa.split(" ");
-                System.out.println("--- PESQUISA ---");
                 System.out.println(barrels);
                 StorageBarrel_I sI;
                 for (String palavra : palavras) {
@@ -98,11 +107,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                     System.out.println(palavra);
 
                 }
-
-                System.out.println("--- FIM PESQUISA ---");
-                System.out.println("RESULTADOS DA PESQUISA ANTES DA INTERSECAO");
-                System.out.println(lista);
-                System.out.println("-------------------------------------------");
                 HashSet<String[]> set = intersection(lista);
 
 
@@ -124,27 +128,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
 
                 ArrayList<String[]> listaOrdenada = new ArrayList<>(set);
                 listaOrdenada.sort(comparador);
-
-                /*System.out.println("SET");
-                for (String[] l : set) {
-                    System.out.println(l[0]);
-                }
-                System.out.println("MAPA FREQS");
-                for (String l : mapaFreqs.keySet()) {
-                    System.out.println(l + " -- " + mapaFreqs.get(l));
-                }
-                System.out.println("COMPARADOR");
-                for (String[] l : listaOrdenada) {
-                    System.out.println(l[0]);
-                }*/
-
-
-                /*String cadeia = "abcdefghijklmnopqrstuvwxyz";
-                for (int i = 0; i < 20; i++) {
-                    String[] aux1 = {cadeia.charAt(i) + " "};
-                    set.add(aux1);
-                }*/
-
 
                 return set;
 
@@ -267,7 +250,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
 
     }
 
-    public boolean adicionarInfoInicialBarrel(String gama, String porto) throws RemoteException {
+    public boolean adicionarInfoInicialBarrel(String gama, String ip, String porto) throws RemoteException {
         boolean flag = true;
         if (gama.length() != 5) {
             flag = false;
@@ -277,13 +260,13 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         } else {
             if (barrels != null) {
                 for (Storage s : barrels) {
-                    if (s.getPorto().equals(porto)) {
+                    if (s.getPorto().equals(porto) && s.getIp().equals(ip)) {
                         flag = false;
                     }
                 }
             }
             if (flag) {
-                barrels.add(new Storage(gama, porto));
+                barrels.add(new Storage(gama, ip, porto));
             }
         }
         return flag;

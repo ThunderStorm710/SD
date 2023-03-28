@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.rmi.AccessException;
 import java.rmi.registry.LocateRegistry;
@@ -154,12 +155,16 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
             try {
                 SearchModule_I h = (SearchModule_I) LocateRegistry.getRegistry(1100).lookup("Search_Module");
-                if (!h.adicionarInfoInicialBarrel(gama_palavra, porto)) {
+                InetAddress enderecoIP = InetAddress.getLocalHost();
+                String ip = enderecoIP.getHostAddress();
+                if (!h.adicionarInfoInicialBarrel(gama_palavra, ip, porto)) {
                     System.out.println("Nao foi possivel ligar ao Search Module...");
                     return;
                 }
             } catch (RemoteException | java.rmi.NotBoundException e) {
                 System.out.println("Interrupted");
+            } catch (UnknownHostException e) {
+                System.out.println("UnknownHostException");
             }
         } else if (type_t == 2) {
             final String MULTICAST_ADDRESS_2 = "224.3.2.2";
