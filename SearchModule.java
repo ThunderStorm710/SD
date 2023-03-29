@@ -108,6 +108,22 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                 System.out.println("Interrupted");
             }
 
+        } else if (type == 3){
+            Duration diff;
+            try {
+                while (true) {
+                    for (Storage b : barrels) {
+                        diff = Duration.between(LocalTime.now(), b.getTempo());
+                        System.out.println(LocalTime.now() + " ---- " + b.getTempo() + " ---- " + diff);
+                        if (diff.getSeconds() / 60 > 3) {
+                            barrels.remove(b);
+                        }
+                    }
+                    Thread.sleep(3000);
+                }
+            } catch (InterruptedException e) {
+                System.out.println("Interrupted");
+            }
         }
     }
 
@@ -394,6 +410,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         try {
             SearchModule sm1 = new SearchModule(1);
             SearchModule sm2 = new SearchModule(2);
+            SearchModule sm3 = new SearchModule(3);
             sm1.lerFichClientes();
 
             Registry r = LocateRegistry.createRegistry(1100);
@@ -401,6 +418,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
 
             sm1.t.join();
             sm2.t.join();
+            sm3.t.join();
 
 
         } catch (Exception e) {
