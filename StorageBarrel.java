@@ -229,7 +229,13 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         String[] lista = mensagem.split("\\|");
         String titulo = lista[3];
         String url = lista[2];
-        String citacao = lista[4];
+        String citacao;
+        if (lista.length == 5){
+            citacao = lista[4];
+        } else {
+            citacao = " ";
+        }
+
 
         try {
             FileOutputStream iOS = new FileOutputStream(fClientesObj);
@@ -291,7 +297,12 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                 System.out.println("cona fixe");
                 FileInputStream fIS = new FileInputStream(fClientesObj);
                 ObjectInputStream oIS = new ObjectInputStream(fIS);
-                palavras = (HashMap<String, HashSet<String[]>>) oIS.readObject();
+                Object obj = oIS.readObject();
+                if (obj instanceof HashMap) {
+                    palavras = (HashMap<String, HashSet<String[]>>) obj;
+                } else {
+                    System.out.println("Error: Invalid object or null returned from input stream.");
+                }
                 //System.out.println(palavras);
                 oIS.close();
                 for (String key : palavras.keySet()) {
@@ -326,6 +337,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         } else {
             mapaPesquisas.put(pesquisa, 1);
         }
+        System.out.println(mapaPesquisas);
     }
 
     public HashSet<String[]> obterInfoBarrel(String palavra) throws RemoteException {
