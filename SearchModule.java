@@ -13,7 +13,6 @@ import java.rmi.server.*;
 
 public class SearchModule extends UnicastRemoteObject implements SearchModule_I, Runnable {
 
-
     private ArrayList<ClienteInfo> clientes;
     private ArrayList<Storage> barrels;
     private ArrayList<DownloaderInfo> downloaders;
@@ -28,7 +27,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         t.start();
     }
 
-
     public void verificarBarrels() {
         Runnable runnable = this::verificarBarrelsFuncao;
         Thread thread = new Thread(runnable);
@@ -42,14 +40,13 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
     }
 
     public void verificarBarrelsFuncao() {
-        System.out.println("SOU TIPO 3");
 
         Duration diff;
         try {
             while (true) {
                 for (Storage b : barrels) {
                     diff = Duration.between(b.getTempo(), LocalTime.now());
-                    if (diff.getSeconds()> 5) {
+                    if (diff.getSeconds() > 5) {
                         System.out.println("REMOVI " + b);
                         barrels.remove(b);
 
@@ -62,10 +59,8 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         }
     }
 
-
     public void verificarDownloadersFuncao() {
         Duration diff;
-        System.out.println("SOU TIPO 2");
         try {
             while (true) {
                 for (DownloaderInfo d : downloaders) {
@@ -97,13 +92,9 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
             socket.joinGroup(group);
             while (true) {
                 byte[] buffer = new byte[254];
-                System.out.println("POTETU1");
                 packet = new DatagramPacket(buffer, buffer.length);
-                System.out.println("POTETU1");
                 socket.receive(packet);
-                System.out.println("POTETU1");
                 message = new String(packet.getData(), 0, packet.getLength());
-                System.out.println("POTETU1");
                 System.out.println(message);
                 linha = message.split("\\|");
                 System.out.println(Arrays.toString(linha));
@@ -168,7 +159,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         }
     }
 
-    synchronized public HashMap<String, HashSet<String[]>> obterInfoFicheiros(String gama, String ip, String porto) throws RemoteException {
+    public HashMap<String, HashSet<String[]>> obterInfoFicheiros(String gama, String ip, String porto) throws RemoteException {
         try {
             for (Storage s : barrels) {
                 if ((!s.getIp().equals(ip) || !s.getPorto().equals(porto)) && s.getGama().equals(gama)) {
@@ -184,7 +175,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         return null;
     }
 
-    synchronized public HashMap<String, HashSet<String>> obterURLFicheiros(String gama, String ip, String porto) throws RemoteException {
+    public HashMap<String, HashSet<String>> obterURLFicheiros(String gama, String ip, String porto) throws RemoteException {
         try {
             for (Storage s : barrels) {
                 if ((!s.getIp().equals(ip) || !s.getPorto().equals(porto)) && s.getGama().equals(gama)) {
@@ -199,6 +190,29 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
 
         return null;
     }
+
+    public HashMap<String, Integer> pesquisasFrequentes() throws RemoteException {
+        HashMap<String, Integer> mapa = new HashMap<>(), aux;
+        try {
+            for (Storage s : barrels) {
+                StorageBarrel_I b = (StorageBarrel_I) LocateRegistry.getRegistry(Integer.parseInt(s.getPorto())).lookup("Storage_Barrel");
+                aux = b.obterPesquisas();
+                for (String cadeia : aux.keySet()) {
+                    if (mapa.containsKey(cadeia)) {
+                        mapa.put(cadeia, aux.get(cadeia) + 1);
+                    } else {
+                        mapa.put(cadeia, aux.get(cadeia));
+
+                    }
+                }
+            }
+        } catch (NotBoundException e) {
+            System.out.println("Erro: " + e);
+        }
+
+        return mapa;
+    }
+
 
     synchronized public HashSet<String[]> pesquisarPaginas(ClienteInfo cliente, String pesquisa) throws RemoteException {
         ArrayList<HashSet<String[]>> lista = new ArrayList<>();
@@ -292,7 +306,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         return result;
     }
 
-
     synchronized public boolean verificarCliente(ClienteInfo cliente) {
 
         for (ClienteInfo c : clientes) {
@@ -302,7 +315,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         }
         return false;
     }
-
 
     public ClienteInfo verificarRegisto(String nome, String email, String username, String password) {
         boolean flag = true;

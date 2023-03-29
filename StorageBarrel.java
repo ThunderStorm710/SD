@@ -186,6 +186,10 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         return lerFichObjetosHashmap();
     }
 
+    public HashMap<String, Integer> obterPesquisas() throws RemoteException {
+        return mapaPesquisas;
+    }
+
 
     public void escreverFichObjetosHashmap(HashMap<String, HashSet<String>> urlsHash) {
 

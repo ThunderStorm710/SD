@@ -42,7 +42,6 @@ public class Client {
         return c1;
     }
 
-
     public static ClienteInfo registar(SearchModule_I h) {
         boolean flag = false;
         String nome, email, password, username;
@@ -108,6 +107,7 @@ public class Client {
         System.out.println("--- Informacoes gerais do sistema ---");
         ArrayList<Storage> barrels = h.obterInfoBarrels();
         ArrayList<DownloaderInfo> downloaders = h.obterInfoDownloaders();
+        HashMap<String, Integer> pesquisas = h.pesquisasFrequentes();
         if (barrels.size() != 0) {
             System.out.println("--- Storage Barrels ---");
 
@@ -122,6 +122,26 @@ public class Client {
             }
         } else {
             System.out.println("Não existem Downloaders ativos de momento!");
+        }
+        if (pesquisas.size() != 0) {
+            List<Map.Entry<String, Integer>> lista = new ArrayList<>(pesquisas.entrySet());
+            lista.sort((o1, o2) -> o2.getValue().compareTo(o1.getValue()));
+
+            HashMap<String, Integer> top10 = new LinkedHashMap<>();
+            int i = 0;
+            for (Map.Entry<String, Integer> entrada : lista) {
+                if (i >= 10) {
+                    break;
+                }
+                top10.put(entrada.getKey(), entrada.getValue());
+                i++;
+            }
+
+            for (String cadeia : top10.keySet()) {
+                System.out.println(cadeia + " ---> " + top10.get(cadeia));
+            }
+        } else {
+            System.out.println("Não existem pesquisas registadas de momento!");
         }
     }
 
