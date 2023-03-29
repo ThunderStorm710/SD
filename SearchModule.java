@@ -2,6 +2,8 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.*;
 import java.rmi.*;
 import java.rmi.registry.LocateRegistry;
@@ -26,20 +28,125 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         t.start();
     }
 
+
+    public void verificarBarrels() {
+        Runnable runnable = this::verificarBarrelsFuncao;
+        Thread thread = new Thread(runnable);
+        thread.start();
+    }
+
+    public void verificarDownloaders() {
+        Runnable runnable = this::verificarDownloadersFuncao;
+        Thread thread = new Thread(runnable);
+        thread.start();
+    }
+
+    public void verificarBarrelsFuncao() {
+        System.out.println("SOU TIPO 3");
+
+        Duration diff;
+        try {
+            while (true) {
+                for (Storage b : barrels) {
+                    diff = Duration.between(b.getTempo(), LocalTime.now());
+                    if (diff.getSeconds()> 5) {
+                        System.out.println("REMOVI " + b);
+                        barrels.remove(b);
+
+                    }
+                }
+                Thread.sleep(3000);
+            }
+        } catch (InterruptedException e) {
+            System.out.println("Interrupted");
+        }
+    }
+
+
+    public void verificarDownloadersFuncao() {
+        Duration diff;
+        System.out.println("SOU TIPO 2");
+        try {
+            while (true) {
+                for (DownloaderInfo d : downloaders) {
+                    diff = Duration.between(d.getTempo(), LocalTime.now());
+                    if (diff.getSeconds() > 5) {
+                        System.out.println("REMOVI " + d);
+                        downloaders.remove(d);
+                    }
+                }
+                Thread.sleep(3000);
+            }
+        } catch (InterruptedException e) {
+            System.out.println("Interrupted");
+        }
+    }
+
     public void run() {
+
         MulticastSocket socket = null;
+        DatagramPacket packet;
+        String[] linha;
         String MULTICAST_ADDRESS = "224.3.2.2";
+        String message;
         int PORT = 4322;
+        boolean flag;
         try {
             socket = new MulticastSocket(PORT);  // create socket and bind it
             InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
             socket.joinGroup(group);
             while (true) {
                 byte[] buffer = new byte[254];
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                System.out.println("POTETU1");
+                packet = new DatagramPacket(buffer, buffer.length);
+                System.out.println("POTETU1");
                 socket.receive(packet);
-                String message = new String(packet.getData(), 0, packet.getLength());
+                System.out.println("POTETU1");
+                message = new String(packet.getData(), 0, packet.getLength());
+                System.out.println("POTETU1");
                 System.out.println(message);
+                linha = message.split("\\|");
+                System.out.println(Arrays.toString(linha));
+
+                switch (linha[0]) {
+                    case "1" -> {
+                        flag = true;
+                        if (linha.length == 4) {
+                            System.out.println(flag);
+                            for (DownloaderInfo d : downloaders) {
+                                if (d.getIp().equals(linha[2]) && d.getPorto().equals(linha[3])) {
+                                    d.setTempo(LocalTime.now());
+                                    flag = false;
+                                    break;
+                                }
+                            }
+                            System.out.println(flag);
+
+                            if (flag) {
+                                downloaders.add(new DownloaderInfo(linha[0], linha[1], linha[2]));
+                            }
+                        }
+                    }
+                    case "2" -> {
+                        flag = true;
+
+                        if (linha.length == 4) {
+                            for (Storage s : barrels) {
+                                if (s.getIp().equals(linha[1]) && s.getPorto().equals(linha[2]) && s.getGama().equals(linha[3])) {
+                                    s.setTempo(LocalTime.now());
+                                    flag = false;
+                                    break;
+                                }
+                            }
+
+                            if (flag) {
+                                barrels.add(new Storage(linha[3], linha[1], linha[2]));
+                            }
+                        }
+                    }
+                    default -> {
+                    }
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -274,13 +381,13 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         if (gama.length() != 5) {
             flag = false;
         } else if ((Character.toUpperCase(gama.charAt(0)) == 'A' && Character.toUpperCase(gama.charAt(3)) != 'M') || (Character.toUpperCase(gama.charAt(0)) == 'N' && Character.toUpperCase(gama.charAt(3)) != 'Z')) {
-            System.out.println("POTETU");
             flag = false;
         } else {
             if (barrels != null) {
                 for (Storage s : barrels) {
                     if (s.getPorto().equals(porto) && s.getIp().equals(ip)) {
                         flag = false;
+
                     }
                 }
             }
@@ -332,8 +439,11 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
 
             Registry r = LocateRegistry.createRegistry(1100);
             r.rebind("Search_Module", sm1);
+            sm1.verificarBarrels();
+            sm1.verificarDownloaders();
 
             sm1.t.join();
+
 
         } catch (Exception e) {
             System.out.println("Error" + e);

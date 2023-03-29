@@ -135,13 +135,10 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                 SearchModule_I h = (SearchModule_I) LocateRegistry.getRegistry(1100).lookup("Search_Module");
                 InetAddress enderecoIP = InetAddress.getLocalHost();
                 String ip = enderecoIP.getHostAddress();
-                if (!h.adicionarInfoInicialBarrel(gama_palavra, ip, porto)) {
-                    System.out.println("Nao foi possivel ligar ao Search Module...");
-                    return;
-                } else {
-                    index = h.obterInfoFicheiros(gama_palavra, ip, porto);
-                    urlHashmap = h.obterURLFicheiros(gama_palavra, ip, porto);
-                }
+
+                index = h.obterInfoFicheiros(gama_palavra, ip, porto);
+                urlHashmap = h.obterURLFicheiros(gama_palavra, ip, porto);
+
             } catch (RemoteException | java.rmi.NotBoundException e) {
                 System.out.println("Interrupted");
             } catch (UnknownHostException e) {

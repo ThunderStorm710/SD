@@ -115,11 +115,13 @@ public class Client {
                 System.out.println(s);
             }
         }
+        System.out.println("--- Downloaders ---");
         if (downloaders.size() != 0) {
-            System.out.println("--- Downloaders ---");
             for (DownloaderInfo d : downloaders) {
                 System.out.println(d);
             }
+        } else {
+            System.out.println("Não existem Downloaders ativos de momento!");
         }
     }
 
@@ -212,7 +214,6 @@ public class Client {
         }
     }
 
-
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         String opcao;
@@ -284,8 +285,6 @@ public class Client {
                             break;
                         case "4":
                             obterInfoGerais(h);
-
-
                             break;
                         case "5":
                             break label;
