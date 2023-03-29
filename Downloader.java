@@ -17,7 +17,7 @@ public class Downloader implements Runnable {
     private final int PORT = 4321;
     private final String MULTICAST_ADDRESS_2 = "224.3.2.2";
     private final int PORT_2 = 4322;
-
+    ArrayList<String> pacotesEnviadas;
     Thread t;
     int type_t;
     String id;
@@ -27,6 +27,7 @@ public class Downloader implements Runnable {
         t.start();
         this.type_t = type_t;
         this.id = id;
+        pacotesEnviadas = new ArrayList<>();
     }
 
     public void run() {
@@ -85,6 +86,7 @@ public class Downloader implements Runnable {
                             for(int i = 3; i<lista.size();i++) {
                                 try {
                                     String frase = "1|" + lista.get(i) + "|" + url + "|" + title + "|" + citacao;
+                                    pacotesEnviadas.add(frase);
                                     byte[] buffer = frase.getBytes();
                                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length, group, PORT);
                                     socket.send(packet);
@@ -102,6 +104,7 @@ public class Downloader implements Runnable {
                             Elements links = doc.select("a[href]");
                             for (Element link : links) {
                                 String frase2 = "2|" + link.attr("abs:href") + "|" + url;
+                                pacotesEnviadas.add(frase2);
                                 byte[] buffer2 = frase2.getBytes();
                                 DatagramPacket packet2 = new DatagramPacket(buffer2, buffer2.length, group, PORT);
                                 socket.send(packet2);
