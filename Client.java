@@ -115,11 +115,13 @@ public class Client {
                 System.out.println(s);
             }
         }
+        System.out.println("--- Downloaders ---");
         if (downloaders.size() != 0) {
-            System.out.println("--- Downloaders ---");
             for (DownloaderInfo d : downloaders) {
                 System.out.println(d);
             }
+        } else {
+            System.out.println("Não existem Downloaders ativos de momento!");
         }
     }
 
