@@ -161,7 +161,9 @@ public class Downloader implements Runnable {
             MulticastSocket socket2 = null;
             while (true) {
                 try {
-                    String di = "1|" + id + "|" + PORT_2;
+                    InetAddress enderecoIP = InetAddress.getLocalHost();
+                    String ip = enderecoIP.getHostAddress();
+                    String di = "1|" + id + "|" + ip + "|" + PORT_2;
 
                     byte[] buffer2 = di.getBytes();
                     socket2 = new MulticastSocket(PORT);

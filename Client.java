@@ -212,7 +212,6 @@ public class Client {
         }
     }
 
-
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         String opcao;
@@ -284,8 +283,6 @@ public class Client {
                             break;
                         case "4":
                             obterInfoGerais(h);
-
-
                             break;
                         case "5":
                             break label;

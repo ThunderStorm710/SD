@@ -1,7 +1,9 @@
 import java.io.Serializable;
+import java.time.LocalTime;
 
 public class Storage implements Serializable {
     private String gama, porto, ip;
+    private LocalTime tempo;
 
     public Storage(){}
 
@@ -9,6 +11,7 @@ public class Storage implements Serializable {
         this.gama = gama;
         this.ip = ip;
         this.porto = porto;
+        this.tempo = LocalTime.now();
     }
 
     public String toString() {
@@ -37,5 +40,13 @@ public class Storage implements Serializable {
 
     public void setIp(String ip) {
         this.ip = ip;
+    }
+
+    public void setTempo(LocalTime tempo) {
+        this.tempo = tempo;
+    }
+
+    public LocalTime getTempo() {
+        return tempo;
     }
 }

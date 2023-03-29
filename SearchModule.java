@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.time.LocalTime;
 import java.util.*;
 import java.rmi.*;
 import java.rmi.registry.LocateRegistry;
@@ -28,18 +29,60 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
 
     public void run() {
         MulticastSocket socket = null;
+        DatagramPacket packet;
+        String[] linha;
         String MULTICAST_ADDRESS = "224.3.2.2";
+        String message;
         int PORT = 4322;
+        boolean flag;
         try {
             socket = new MulticastSocket(PORT);  // create socket and bind it
             InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
             socket.joinGroup(group);
             while (true) {
                 byte[] buffer = new byte[254];
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
-                String message = new String(packet.getData(), 0, packet.getLength());
+                message = new String(packet.getData(), 0, packet.getLength());
                 System.out.println(message);
+                linha = message.split("\\|");
+
+                switch (linha[0]) {
+
+                    case "1":
+                        flag = true;
+                        if (linha.length == 4) {
+                            for (DownloaderInfo d : downloaders) {
+                                if (d.getIp().equals(linha[2]) && d.getPorto().equals(linha[3])) {
+                                    d.setTempo(LocalTime.now());
+                                    flag = false;
+                                    break;
+                                }
+                            }
+                            if (flag) {
+                                downloaders.add(new DownloaderInfo(linha[0], linha[1], linha[2]));
+                            }
+                        }
+
+                        break;
+                    case "2":
+                        flag = true;
+                        if (linha.length == 4) {
+                            for (Storage s : barrels) {
+                                if (s.getIp().equals(linha[1]) && s.getPorto().equals(linha[2]) && s.getGama().equals(linha[3])) {
+                                    s.setTempo(LocalTime.now());
+                                    flag = false;
+                                    break;
+                                }
+                            }
+                            if (flag) {
+                                barrels.add(new Storage(linha[3], linha[1], linha[2]));
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
