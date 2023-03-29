@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.time.Duration;
 import java.time.LocalTime;
 import java.util.*;
 import java.rmi.*;
@@ -17,75 +18,96 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
     private ArrayList<Storage> barrels;
     private ArrayList<DownloaderInfo> downloaders;
     transient Thread t;
+    int type;
 
-    public SearchModule() throws RemoteException {
+    public SearchModule(int type) throws RemoteException {
         super();
         this.clientes = new ArrayList<>();
         this.barrels = new ArrayList<>();
         this.downloaders = new ArrayList<>();
+        this.type = type;
         t = new Thread(this);
         t.start();
     }
 
     public void run() {
-        MulticastSocket socket = null;
-        DatagramPacket packet;
-        String[] linha;
-        String MULTICAST_ADDRESS = "224.3.2.2";
-        String message;
-        int PORT = 4322;
-        boolean flag;
-        try {
-            socket = new MulticastSocket(PORT);  // create socket and bind it
-            InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
-            socket.joinGroup(group);
-            while (true) {
-                byte[] buffer = new byte[254];
-                packet = new DatagramPacket(buffer, buffer.length);
-                socket.receive(packet);
-                message = new String(packet.getData(), 0, packet.getLength());
-                System.out.println(message);
-                linha = message.split("\\|");
+        if (type == 1) {
+            MulticastSocket socket = null;
+            DatagramPacket packet;
+            String[] linha;
+            String MULTICAST_ADDRESS = "224.3.2.2";
+            String message;
+            int PORT = 4322;
+            boolean flag;
+            try {
+                socket = new MulticastSocket(PORT);  // create socket and bind it
+                InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
+                socket.joinGroup(group);
+                while (true) {
+                    byte[] buffer = new byte[254];
+                    packet = new DatagramPacket(buffer, buffer.length);
+                    socket.receive(packet);
+                    message = new String(packet.getData(), 0, packet.getLength());
+                    System.out.println(message);
+                    linha = message.split("\\|");
 
-                switch (linha[0]) {
+                    switch (linha[0]) {
 
-                    case "1":
-                        flag = true;
-                        if (linha.length == 4) {
-                            for (DownloaderInfo d : downloaders) {
-                                if (d.getIp().equals(linha[2]) && d.getPorto().equals(linha[3])) {
-                                    d.setTempo(LocalTime.now());
-                                    flag = false;
-                                    break;
+                        case "1":
+                            flag = true;
+                            if (linha.length == 4) {
+                                for (DownloaderInfo d : downloaders) {
+                                    if (d.getIp().equals(linha[2]) && d.getPorto().equals(linha[3])) {
+                                        d.setTempo(LocalTime.now());
+                                        flag = false;
+                                        break;
+                                    }
+                                }
+                                if (flag) {
+                                    downloaders.add(new DownloaderInfo(linha[0], linha[1], linha[2]));
                                 }
                             }
-                            if (flag) {
-                                downloaders.add(new DownloaderInfo(linha[0], linha[1], linha[2]));
-                            }
-                        }
 
-                        break;
-                    case "2":
-                        flag = true;
-                        if (linha.length == 4) {
-                            for (Storage s : barrels) {
-                                if (s.getIp().equals(linha[1]) && s.getPorto().equals(linha[2]) && s.getGama().equals(linha[3])) {
-                                    s.setTempo(LocalTime.now());
-                                    flag = false;
-                                    break;
+                            break;
+                        case "2":
+                            flag = true;
+                            if (linha.length == 4) {
+                                for (Storage s : barrels) {
+                                    if (s.getIp().equals(linha[1]) && s.getPorto().equals(linha[2]) && s.getGama().equals(linha[3])) {
+                                        s.setTempo(LocalTime.now());
+                                        flag = false;
+                                        break;
+                                    }
+                                }
+                                if (flag) {
+                                    barrels.add(new Storage(linha[3], linha[1], linha[2]));
                                 }
                             }
-                            if (flag) {
-                                barrels.add(new Storage(linha[3], linha[1], linha[2]));
-                            }
-                        }
-                        break;
-                    default:
-                        break;
+                            break;
+                        default:
+                            break;
+                    }
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } else if (type == 2) {
+            Duration diff;
+            try {
+                while (true) {
+                    for (DownloaderInfo d : downloaders) {
+                        diff = Duration.between(LocalTime.now(), d.getTempo());
+                        System.out.println(LocalTime.now() + " ---- " + d.getTempo() + " ---- " + diff);
+                        if (diff.getSeconds() / 60 > 3) {
+                            downloaders.remove(d);
+                        }
+                    }
+                    Thread.sleep(3000);
+                }
+            } catch (InterruptedException e) {
+                System.out.println("Interrupted");
+            }
+
         }
     }
 
@@ -370,13 +392,16 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
 
     public static void main(String[] args) {
         try {
-            SearchModule sm1 = new SearchModule();
+            SearchModule sm1 = new SearchModule(1);
+            SearchModule sm2 = new SearchModule(2);
             sm1.lerFichClientes();
 
             Registry r = LocateRegistry.createRegistry(1100);
             r.rebind("Search_Module", sm1);
 
             sm1.t.join();
+            sm2.t.join();
+
 
         } catch (Exception e) {
             System.out.println("Error" + e);
