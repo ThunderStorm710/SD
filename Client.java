@@ -107,6 +107,7 @@ public class Client {
         System.out.println("--- Informacoes gerais do sistema ---");
         ArrayList<Storage> barrels = h.obterInfoBarrels();
         ArrayList<DownloaderInfo> downloaders = h.obterInfoDownloaders();
+
         HashMap<String, Integer> pesquisas = h.pesquisasFrequentes();
         if (barrels.size() != 0) {
             System.out.println("--- Storage Barrels ---");

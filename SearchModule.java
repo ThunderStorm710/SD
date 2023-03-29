@@ -40,20 +40,21 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
     }
 
     public void verificarBarrelsFuncao() {
-
+        int i;
         Duration diff;
         try {
             while (true) {
-                for (Storage b : barrels) {
-                    diff = Duration.between(b.getTempo(), LocalTime.now());
+                i = 0;
+                while (i < barrels.size()) {
+                    diff = Duration.between(barrels.get(i).getTempo(), LocalTime.now());
                     if (diff.getSeconds() > 5) {
-                        System.out.println("REMOVI " + b);
-                        barrels.remove(b);
-
+                        System.out.println("REMOVI " + barrels.get(i));
+                        barrels.remove(i);
                     }
                 }
                 Thread.sleep(3000);
             }
+
         } catch (InterruptedException e) {
             System.out.println("Interrupted");
         }
@@ -61,16 +62,21 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
 
     public void verificarDownloadersFuncao() {
         Duration diff;
+        int i;
         try {
             while (true) {
-                for (DownloaderInfo d : downloaders) {
-                    diff = Duration.between(d.getTempo(), LocalTime.now());
-                    if (diff.getSeconds() > 5) {
-                        System.out.println("REMOVI " + d);
-                        downloaders.remove(d);
+                synchronized (downloaders) {
+                    i = 0;
+                    while (i < downloaders.size()) {
+                        diff = Duration.between(downloaders.get(i).getTempo(), LocalTime.now());
+                        if (diff.getSeconds() > 5) {
+                            System.out.println("REMOVI " + downloaders.get(i));
+                            downloaders.remove(i);
+                        }
+                        i++;
                     }
+                    Thread.sleep(3000);
                 }
-                Thread.sleep(3000);
             }
         } catch (InterruptedException e) {
             System.out.println("Interrupted");
@@ -95,15 +101,12 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                 packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
                 message = new String(packet.getData(), 0, packet.getLength());
-                System.out.println(message);
                 linha = message.split("\\|");
-                System.out.println(Arrays.toString(linha));
 
                 switch (linha[0]) {
                     case "1" -> {
                         flag = true;
                         if (linha.length == 4) {
-                            System.out.println(flag);
                             for (DownloaderInfo d : downloaders) {
                                 if (d.getIp().equals(linha[2]) && d.getPorto().equals(linha[3])) {
                                     d.setTempo(LocalTime.now());
@@ -111,10 +114,9 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                                     break;
                                 }
                             }
-                            System.out.println(flag);
 
                             if (flag) {
-                                downloaders.add(new DownloaderInfo(linha[0], linha[1], linha[2]));
+                                downloaders.add(new DownloaderInfo(linha[1], linha[2], linha[3]));
                             }
                         }
                     }
@@ -195,6 +197,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         HashMap<String, Integer> mapa = new HashMap<>(), aux;
         try {
             for (Storage s : barrels) {
+                System.out.println(s + "------------");
                 StorageBarrel_I b = (StorageBarrel_I) LocateRegistry.getRegistry(Integer.parseInt(s.getPorto())).lookup("Storage_Barrel");
                 aux = b.obterPesquisas();
                 for (String cadeia : aux.keySet()) {
@@ -221,6 +224,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         int porto, freq;
         boolean flag = true;
 
+
         if (verificarCliente(cliente)) {
             try {
                 String[] palavras = pesquisa.split(" ");
@@ -228,6 +232,12 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                 StorageBarrel_I sI;
                 for (String palavra : palavras) {
                     for (Storage s : barrels) {
+                        if (flag) {
+                            flag = false;
+                            sI = (StorageBarrel_I) LocateRegistry.getRegistry(Integer.parseInt(s.getPorto())).lookup("Storage_Barrel");
+                            sI.adicionarPesquisa(pesquisa);
+
+                        }
                         System.out.println(palavra.charAt(0) + " --- " + s.getGama().charAt(1) + " --- " + s.getGama().charAt(3));
                         if (Character.toUpperCase(palavra.charAt(0)) >= s.getGama().charAt(1) && Character.toUpperCase(palavra.charAt(0)) <= s.getGama().charAt(3)) {
                             porto = Integer.parseInt(s.getPorto());
@@ -235,13 +245,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                             aux = sI.obterInfoBarrel(palavra);
                             lista.add(aux);
                             System.out.println(aux);
-                            if (flag) {
-                                flag = false;
-                                sI.adicionarPesquisa(pesquisa);
-
-                            }
                             break;
-
                         }
 
                     }
