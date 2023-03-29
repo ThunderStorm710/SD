@@ -11,7 +11,7 @@ import java.util.*;
 
 public class Downloader implements Runnable {
 
-    HashMap<String, HashSet<String>> urlsLig;
+
     private static final int MAX_CHUNK_SIZE = 1024;
     private final String MULTICAST_ADDRESS = "224.3.2.1";
     private final int PORT = 4321;
@@ -23,7 +23,6 @@ public class Downloader implements Runnable {
     String id;
 
     public Downloader(int type_t, String id) {
-        this.urlsLig = new HashMap<>();
         t = new Thread(this);
         t.start();
         this.type_t = type_t;
@@ -53,6 +52,7 @@ public class Downloader implements Runnable {
                         ArrayList<String> lista = new ArrayList<>();
 
                         if (url != null) {
+
                             String citacao;
                             System.out.println(url);
 
@@ -69,8 +69,8 @@ public class Downloader implements Runnable {
                                 lista.add(firstParagraph.text());
                             }
                             else{
-                                citacao = "";
-                                lista.add("");
+                                citacao = " ";
+                                lista.add(" ");
                             }
 
 
@@ -83,65 +83,30 @@ public class Downloader implements Runnable {
                             }
                             InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
                             for(int i = 3; i<lista.size();i++) {
-                                String frase = "1|" + lista.get(i) + "|" + url +"|" + title + "|" + citacao;
-                                byte[] buffer = frase.getBytes();
-                                DatagramPacket packet = new DatagramPacket(buffer, buffer.length, group, PORT);
-                                socket.send(packet);
-                            }
-
-
-                            if (urlsLig != null) {
                                 try {
-                                    ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-                                    ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
-                                    objectStream.writeObject(urlsLig);
-                                    byte[] data = byteStream.toByteArray();
-
-                                    int offset = 0;
-                                    while (offset < data.length) {
-                                        int chunkSize = Math.min(MAX_CHUNK_SIZE, data.length - offset);
-                                        byte[] chunkData = new byte[chunkSize];
-                                        System.arraycopy(data, offset, chunkData, 0, chunkSize);
-
-                                        DatagramPacket packet2 = new DatagramPacket(chunkData, chunkSize, group, PORT);
-
-                                        socket.send(packet2);
-
-                                        offset += chunkSize;
-                                    }
-                                } catch (UTFDataFormatException e) {
+                                    String frase = "1|" + lista.get(i) + "|" + url + "|" + title + "|" + citacao;
+                                    byte[] buffer = frase.getBytes();
+                                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length, group, PORT);
+                                    socket.send(packet);
+                                }catch (UTFDataFormatException e) {
                                     System.out.println("String em codificacao invalida...");
                                 } catch (StreamCorruptedException e) {
                                     System.out.println("Dados de objeto inválidos...");
-                                } catch (IOException | ClassCastException e) {
+                                } catch (IOException e) {
                                     System.out.println("Erro: " + e);
                                 }
                             }
 
 
+
                             Elements links = doc.select("a[href]");
                             for (Element link : links) {
-                                if (!urlsLig.containsKey(link.attr("abs:href"))) {
-                                    HashSet<String> values = new HashSet<>();
-                                    values.add(url);
-                                    urlsLig.put(link.attr("abs:href"), values);
-                                } else {
-                                    HashSet<String> values = urlsLig.get(link.attr("abs:href"));
-                                    if (values != null) {
-                                        values.add(url);
-                                        urlsLig.put(link.attr("abs:href"), values);
-                                    }
-                                }
-                                // PRINT DO HASHMAP
-                                //System.out.println("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
-                                //for (Map.Entry<String, HashSet<String>> entry : urlsLig.entrySet()) {
-                                //    String key = entry.getKey();
-                                //    HashSet<String> values = entry.getValue();
-                                //    System.out.println("Chave: " + key);
-                                //    System.out.println("Valores: " + values);
-                                //}
-                                //System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-                                //System.out.println( link.attr("abs:href") );
+                                String frase2 = "2|" + link.attr("abs:href") + "|" + url;
+                                byte[] buffer2 = frase2.getBytes();
+                                DatagramPacket packet2 = new DatagramPacket(buffer2, buffer2.length, group, PORT);
+                                socket.send(packet2);
+
+
                                 h.recUrl(link.attr("abs:href"));
 
                             }

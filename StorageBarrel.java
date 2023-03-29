@@ -59,32 +59,46 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                     System.out.println("Received packet from " + packet.getAddress().getHostAddress() + ":" + packet.getPort() + " with message:");
 
                     String message = new String(packet.getData(), 0, packet.getLength());
+                    String[] protocolo = message.split("\\|");
                     System.out.println(message);
-
-
-                    escreverFichObjetos(message);
-                    index = lerFichObjetos();
-
-
-
-                    byte[] data = new byte[0];
-                    while (true) {
-                        byte[] buffer2 = new byte[MAX_PACKET_SIZE];
-                        DatagramPacket packet2 = new DatagramPacket(buffer2, buffer2.length);
-                        socket.receive(packet2);
-
-                        byte[] receivedData = packet2.getData();
-                        int receivedSize = packet2.getLength();
-                        byte[] newData = new byte[data.length + receivedSize];
-                        System.arraycopy(data, 0, newData, 0, data.length);
-                        System.arraycopy(receivedData, 0, newData, data.length, receivedSize);
-                        data = newData;
-
-                        if (receivedSize < MAX_PACKET_SIZE) {
-                            break;
+                    if(protocolo[0].equals("1")) {
+                        System.out.println(message);
+                        System.out.println("cona");
+                        escreverFichObjetos(message);
+                        lerFichObjetos();
+                    }
+                    if(protocolo[0].equals("2")) {
+                        //System.out.println(message);
+                        if (!urlHashmap.containsKey(protocolo[1])) {
+                            // Se não existir, cria um novo conjunto de valores
+                            HashSet<String> values = new HashSet<>();
+                            values.add(protocolo[2]);
+                            urlHashmap.put(protocolo[1], values);
+                        } else {
+                            HashSet<String> values = urlHashmap.get(protocolo[1]);
+                            if (values != null) {
+                                values.add(protocolo[2]);
+                                urlHashmap.put(protocolo[1], values);
+                            }
                         }
+                        escreverFichObjetosHashmap(urlHashmap);
+                        //urlHashmap = lerFichObjetosHashmap();
+                        /*
+                        if (urlHashmap != null) {
+                            System.out.println("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
+                            for (Map.Entry<String, HashSet<String>> entry : urlHashmap.entrySet()) {
+                                String key = entry.getKey();
+                                HashSet<String> values = entry.getValue();
+                                System.out.println("Chave: " + key);
+                                System.out.println("Valores: " + values);
+                            }
+                            System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+                        }
+                        */
+
                     }
 
+                    /*
                     try {
                         ByteArrayInputStream byteStream = new ByteArrayInputStream(data);
                         ObjectInputStream objectStream = new ObjectInputStream(byteStream);
@@ -105,26 +119,17 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                     } catch (ClassCastException | IOException e) {
                         System.out.println("Classe não encontrada...");
                     }
-
+                    */
 
                     //escreverFichObjetosHashmap(urlsLigacoes);
                     //urlHashmap = lerFichObjetosHashmap();
 
 
-                    if (urlHashmap != null) {
-                        System.out.println("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
-                        for (Map.Entry<String, HashSet<String>> entry : urlHashmap.entrySet()) {
-                            String key = entry.getKey();
-                            HashSet<String> values = entry.getValue();
-                            System.out.println("Chave: " + key);
-                            System.out.println("Valores: " + values);
-                        }
-                        System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-                    }
+
 
 
                 }
-            } catch (IOException | ClassNotFoundException e) {
+            } catch (IOException  e) {
                 e.printStackTrace();
             } finally {
                 socket.close();
@@ -217,7 +222,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
     }
 
     public void escreverFichObjetos(String mensagem) {
-        String[] lista = mensagem.split("|");
+        String[] lista = mensagem.split("\\|");
         String titulo = lista[3];
         String url = lista[2];
         String citacao = lista[4];
@@ -251,7 +256,23 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                     }
                 }
             }
+            /*
+            for (String key : index.keySet()) {
+                System.out.println("Key: " + key);
 
+                // Access the values associated with the current key
+                HashSet<String[]> values = index.get(key);
+                System.out.print("Values:[");
+                for (String[] val : values) {
+                    System.out.print("[");
+                    for (String v : val) {
+                        System.out.print(v + " ,");
+                    }
+                    System.out.println("]");
+                }
+            }
+
+            */
             oOS.writeObject(index);
             oOS.close();
         } catch (IOException e) {
@@ -263,9 +284,11 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         HashMap<String, HashSet<String[]>> palavras = null;
         if (fClientesObj.exists()) {
             try {
+                System.out.println("cona fixe");
                 FileInputStream fIS = new FileInputStream(fClientesObj);
                 ObjectInputStream oIS = new ObjectInputStream(fIS);
                 palavras = (HashMap<String, HashSet<String[]>>) oIS.readObject();
+                //System.out.println(palavras);
                 oIS.close();
                 for (String key : palavras.keySet()) {
                     System.out.println("Key: " + key);
