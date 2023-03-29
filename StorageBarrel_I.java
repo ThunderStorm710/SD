@@ -14,4 +14,6 @@ public interface StorageBarrel_I extends Remote {
 
     public  HashMap<String, HashSet<String>> obterURLMap() throws RemoteException;
 
-}
+    public HashMap<String, Integer> obterPesquisas() throws RemoteException;
+
+    }

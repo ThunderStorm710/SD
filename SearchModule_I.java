@@ -24,5 +24,7 @@ public interface SearchModule_I extends Remote {
 
     public HashMap<String, HashSet<String>> obterURLFicheiros(String gama, String ip, String porto) throws RemoteException;
 
+    public HashMap<String, Integer> pesquisasFrequentes() throws RemoteException;
+
 
 }
