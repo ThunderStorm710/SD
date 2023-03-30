@@ -79,9 +79,20 @@ public class Client {
     public static void indexarURL(SearchModule_I h, ClienteInfo cliente) throws RemoteException {
         Scanner sc = new Scanner(System.in);
         System.out.print("Insira um URL: ");
-        String opcao = sc.nextLine();
+        String url = sc.nextLine();
         System.out.println("Vou indexar!");
-        h.indexarURL(cliente, opcao);
+        if (!h.indexarURL(cliente, url)) {
+            System.out.print("URL ja foi visitado!\nQuer indexar a mesma? S/N");
+            String opcao = sc.nextLine();
+            opcao = opcao.toUpperCase();
+            if (opcao.equals("S")){
+                h.indexarALista(cliente, url);
+                System.out.println("URL indexado!");
+            } else {
+                System.out.println("URL nao indexado!");
+            }
+        }
+
     }
 
     public static void consultarListaPaginas(SearchModule_I h, ClienteInfo cliente) throws RemoteException {

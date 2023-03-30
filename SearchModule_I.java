@@ -4,7 +4,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 public interface SearchModule_I extends Remote {
-    public void indexarURL(ClienteInfo cliente, String url) throws RemoteException;
+    public boolean indexarURL(ClienteInfo cliente, String url) throws RemoteException;
+
+    public void indexarALista(ClienteInfo cliente, String url) throws RemoteException;
 
     public HashSet<String[]> pesquisarPaginas(ClienteInfo cliente, String pesquisa) throws RemoteException;
 

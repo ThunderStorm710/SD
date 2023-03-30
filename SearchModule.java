@@ -147,12 +147,29 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
     }
 
 
-    synchronized public void indexarURL(ClienteInfo cliente, String url) throws RemoteException {
+    synchronized public boolean indexarURL(ClienteInfo cliente, String url) throws RemoteException {
+        boolean flag = false;
         if (verificarCliente(cliente)) {
             try {
                 FilaURL_I h = (FilaURL_I) LocateRegistry.getRegistry(1099).lookup("fila_url");
                 System.out.println("Vou adicionar o url " + url + " a fila!");
-                h.recUrl(url);
+                if (h.recUrl(url)){
+                    flag =  true;
+                }
+
+            } catch (Exception e) {
+                System.out.println("Error" + e);
+            }
+
+        }
+        return flag;
+    }
+    public void indexarALista(ClienteInfo cliente, String url) throws RemoteException{
+        if (verificarCliente(cliente)) {
+            try {
+                FilaURL_I h = (FilaURL_I) LocateRegistry.getRegistry(1099).lookup("fila_url");
+                System.out.println("Vou adicionar o url " + url + " a fila!");
+                h.adicionarAForca(url);
 
             } catch (Exception e) {
                 System.out.println("Error" + e);
