@@ -44,15 +44,18 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         Duration diff;
         try {
             while (true) {
-                i = 0;
-                while (i < barrels.size()) {
-                    diff = Duration.between(barrels.get(i).getTempo(), LocalTime.now());
-                    if (diff.getSeconds() > 5) {
-                        System.out.println("REMOVI " + barrels.get(i));
-                        barrels.remove(i);
+                synchronized (barrels) {
+                    i = 0;
+                    while (i < barrels.size()) {
+                        diff = Duration.between(barrels.get(i).getTempo(), LocalTime.now());
+                        if (diff.getSeconds() > 5) {
+                            System.out.println("REMOVI " + barrels.get(i));
+                            barrels.remove(i);
+                        }
                     }
+                    Thread.sleep(3000);
                 }
-                Thread.sleep(3000);
+
             }
 
         } catch (InterruptedException e) {
@@ -114,7 +117,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                                     break;
                                 }
                             }
-
                             if (flag) {
                                 downloaders.add(new DownloaderInfo(linha[1], linha[2], linha[3]));
                             }
@@ -122,7 +124,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                     }
                     case "2" -> {
                         flag = true;
-
                         if (linha.length == 4) {
                             for (Storage s : barrels) {
                                 if (s.getIp().equals(linha[1]) && s.getPorto().equals(linha[2]) && s.getGama().equals(linha[3])) {
@@ -131,7 +132,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                                     break;
                                 }
                             }
-
                             if (flag) {
                                 barrels.add(new Storage(linha[3], linha[1], linha[2]));
                             }
@@ -184,7 +184,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                     StorageBarrel_I b = (StorageBarrel_I) LocateRegistry.getRegistry(Integer.parseInt(porto)).lookup("Storage_Barrel");
                     return b.obterURLMap();
                 }
-
             }
         } catch (NotBoundException e) {
             System.out.println("Erro: " + e);
@@ -197,7 +196,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         HashMap<String, Integer> mapa = new HashMap<>(), aux;
         try {
             for (Storage s : barrels) {
-                System.out.println(s + "------------");
                 StorageBarrel_I b = (StorageBarrel_I) LocateRegistry.getRegistry(Integer.parseInt(s.getPorto())).lookup("Storage_Barrel");
                 aux = b.obterPesquisas();
                 for (String cadeia : aux.keySet()) {
@@ -228,17 +226,16 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         if (verificarCliente(cliente)) {
             try {
                 String[] palavras = pesquisa.split(" ");
-                System.out.println(barrels);
                 StorageBarrel_I sI;
                 for (String palavra : palavras) {
                     for (Storage s : barrels) {
                         if (flag) {
-                            flag = false;
                             sI = (StorageBarrel_I) LocateRegistry.getRegistry(Integer.parseInt(s.getPorto())).lookup("Storage_Barrel");
                             sI.adicionarPesquisa(pesquisa);
+                            System.out.println("ADICIONEI À PESQUISA");
+                            flag = false;
 
                         }
-                        System.out.println(palavra.charAt(0) + " --- " + s.getGama().charAt(1) + " --- " + s.getGama().charAt(3));
                         if (Character.toUpperCase(palavra.charAt(0)) >= s.getGama().charAt(1) && Character.toUpperCase(palavra.charAt(0)) <= s.getGama().charAt(3)) {
                             porto = Integer.parseInt(s.getPorto());
                             sI = (StorageBarrel_I) LocateRegistry.getRegistry(porto).lookup("Storage_Barrel");

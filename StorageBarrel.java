@@ -8,6 +8,8 @@ import java.rmi.AccessException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.text.Normalizer;
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,6 +43,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         t.start();
     }
 
+
     public void run() {
         LerArquivoTexto();
         if (type_t == 0) {
@@ -63,7 +66,6 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                     System.out.println(message);
                     if(protocolo[0].equals("1")) {
                         System.out.println(message);
-                        System.out.println("cona");
                         escreverFichObjetos(message);
                         lerFichObjetos();
                     }
@@ -294,7 +296,6 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         HashMap<String, HashSet<String[]>> palavras = null;
         if (fClientesObj.exists()) {
             try {
-                System.out.println("cona fixe");
                 FileInputStream fIS = new FileInputStream(fClientesObj);
                 ObjectInputStream oIS = new ObjectInputStream(fIS);
                 Object obj = oIS.readObject();
@@ -337,7 +338,10 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         } else {
             mapaPesquisas.put(pesquisa, 1);
         }
+        System.out.println("------------------------------432432");
         System.out.println(mapaPesquisas);
+        System.out.println("TIPO " + type_t);
+        System.out.println("------------------------------432432");
     }
 
     public HashSet<String[]> obterInfoBarrel(String palavra) throws RemoteException {
