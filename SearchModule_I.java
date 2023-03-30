@@ -28,5 +28,6 @@ public interface SearchModule_I extends Remote {
 
     public HashMap<String, Integer> pesquisasFrequentes() throws RemoteException;
 
+    public ArrayList<ClienteInfo> obterClientes(String gama, String ip, String porto) throws RemoteException;
 
 }

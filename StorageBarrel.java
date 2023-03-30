@@ -5,6 +5,7 @@ import java.net.MulticastSocket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.rmi.AccessException;
+import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.text.Normalizer;
@@ -20,7 +21,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
     HashMap<String, HashSet<String[]>> index;
     HashMap<String, HashSet<String>> urlHashmap;
     HashMap<String, Integer> mapaPesquisas;
-    private static final int MAX_PACKET_SIZE = 1024;
+    ArrayList<ClienteInfo> clientes;
     ArrayList<String> stopwords;
     int type_t;
     String porto;
@@ -33,6 +34,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         this.urlHashmap = new HashMap<>();
         this.stopwords = new ArrayList<>();
         this.mapaPesquisas = new HashMap<>();
+        this.clientes = new ArrayList<>();
         this.fClientesObj = new File(nome_fich);
         this.fClientesObjHashUrl = new File(nome_fich2);
         this.type_t = type_t;
@@ -56,20 +58,19 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                     socket.receive(packet);
 
-                    System.out.println("Received packet from " + packet.getAddress().getHostAddress() + ":" + packet.getPort() + " with message:");
-
+                    //System.out.println("Received packet from " + packet.getAddress().getHostAddress() + ":" + packet.getPort() + " with message:");
                     String message = new String(packet.getData(), 0, packet.getLength());
                     String[] protocolo = message.split("\\|");
-                    System.out.println(message);
+                    //System.out.println(message);
                     if (protocolo[0].equals("1")) {
-                        System.out.println(message);
+                        //System.out.println(message);
                         escreverFichObjetos(message);
                         lerFichObjetos();
                     }
                     if (protocolo[0].equals("2")) {
                         //System.out.println(message);
                         if (!urlHashmap.containsKey(protocolo[1])) {
-                            // Se não existir, cria um novo conjunto de valores
+                            // Se não existir, cria um conjunto de valores
                             HashSet<String> values = new HashSet<>();
                             values.add(protocolo[2]);
                             urlHashmap.put(protocolo[1], values);
@@ -139,6 +140,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
                 index = h.obterInfoFicheiros(gama_palavra, ip, porto);
                 urlHashmap = h.obterURLFicheiros(gama_palavra, ip, porto);
+                lerFichClientes(h, gama_palavra, ip, porto);
 
             } catch (RemoteException | java.rmi.NotBoundException e) {
                 System.out.println("Interrupted");
@@ -187,8 +189,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         return mapaPesquisas;
     }
 
-
-    public void escreverMapaPesquisas(HashMap<String, Integer> mapaPesquisas){
+    public void escreverMapaPesquisas(HashMap<String, Integer> mapaPesquisas) {
         File fich = new File("MapaPesquisas");
         try {
             FileOutputStream iOS = new FileOutputStream(fich);
@@ -202,7 +203,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
     }
 
-    public HashMap<String, Integer> lerMapaPesquisas(){
+    public HashMap<String, Integer> lerMapaPesquisas() {
         HashMap<String, Integer> mapa = null;
         File fich = new File("MapaPesquisas");
 
@@ -224,6 +225,74 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         }
         return mapa;
 
+    }
+
+    public void escreverFichClientes() {
+        File fClientesObj = new File("Objetos - Clientes");
+        try {
+            FileOutputStream iOS = new FileOutputStream(fClientesObj);
+            ObjectOutputStream oOS = new ObjectOutputStream(iOS);
+            for (ClienteInfo cliente : clientes) {
+
+                oOS.writeObject(cliente);
+            }
+            oOS.close();
+        } catch (IOException e) {
+            System.out.println("ERRO " + e);
+        }
+    }
+
+    public void lerFichClientes(SearchModule_I s, String gama_palavra, String ip, String porto) {
+        File fClientes = new File("Objetos - Clientes");
+        if (fClientes.exists()) {
+            ClienteInfo cliente;
+            try {
+                FileInputStream fIS = new FileInputStream(fClientes);
+                ObjectInputStream oIS = new ObjectInputStream(fIS);
+                while ((cliente = (ClienteInfo) oIS.readObject()) != null) {
+                    clientes.add(cliente);
+                }
+                oIS.close();
+            } catch (EOFException e) {
+                System.out.print("");
+
+            } catch (ClassNotFoundException | IOException e) {
+                System.out.println("ERRO " + e);
+            }
+        } else {
+            try {
+                System.out.println("[LEITURA FICHEIRO] Ficheiro de Objetos de Clientes nao existe...");
+                clientes = s.obterClientes(gama_palavra, ip, porto);
+            } catch (RemoteException e) {
+                System.out.println("Interrupted Remote: " + e);
+            }
+
+
+        }
+        clientes.ensureCapacity(100);
+
+    }
+
+    public ArrayList<ClienteInfo> obterClientesBarrel() throws RemoteException {
+        try {
+            InetAddress enderecoIP = InetAddress.getLocalHost();
+            String ip = enderecoIP.getHostAddress();
+            SearchModule_I h = (SearchModule_I) LocateRegistry.getRegistry(1100).lookup("Search_Module");
+
+            lerFichClientes(h, gama_palavra, ip, porto);
+        } catch (UnknownHostException | NotBoundException e) {
+            e.printStackTrace();
+        }
+
+        // não era suposto ser preciso fazer a ligação, mas só funciona assim
+        return clientes;
+    }
+
+    public void adicionarCliente(ClienteInfo cliente) throws RemoteException {
+        if (this.clientes != null) {
+            this.clientes.add(cliente);
+            escreverFichClientes();
+        }
     }
 
 
@@ -284,7 +353,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
             String p_ascii = Normalizer.normalize(palavra, Normalizer.Form.NFD);
             if (!palavra.equals("") && !stopwords.contains(palavra) && Character.toLowerCase(p_ascii.charAt(0)) >= Character.toLowerCase(gama_palavra.charAt(1)) && Character.toLowerCase(p_ascii.charAt(0)) <= Character.toLowerCase(gama_palavra.charAt(3))) {
                 if (!index.containsKey(palavra)) {
-                    // Se não existir, cria um novo conjunto de valores
+                    // Se não existir, cria um conjunto de valores
                     HashSet<String[]> values = new HashSet<>();
                     values.add(valores);
                     index.put(palavra, values);
@@ -340,6 +409,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                 }
                 //System.out.println(palavras);
                 oIS.close();
+                /*
                 for (String key : palavras.keySet()) {
                     System.out.println("Key: " + key);
 
@@ -355,6 +425,8 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                     }
                 }
 
+                 */
+
             } catch (EOFException e) {
                 System.out.print("");
             } catch (ClassNotFoundException | IOException e) {
@@ -368,7 +440,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
     public void adicionarPesquisa(String pesquisa) throws RemoteException {
         mapaPesquisas = lerMapaPesquisas();
-        if (mapaPesquisas != null){
+        if (mapaPesquisas != null) {
             if (mapaPesquisas.containsKey(pesquisa)) {
                 mapaPesquisas.put(pesquisa, mapaPesquisas.get(pesquisa) + 1);
             } else {
@@ -414,10 +486,9 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
     public static void main(String[] args) {
         if (args.length != 4) {
-            System.out.println("StorageBarrel <NOME DO FICHEIRO> <GAMA DA PALAVRAS [a-z]> <PORTO>");
+            System.out.println("StorageBarrel <NOME DO FICHEIRO PALAVRAS> <NOME DO FICHEIRO URL> <GAMA DA PALAVRAS [a-z]> <PORTO>");
             return;
         }
-        System.out.println("ARGS" + args[0] + " --- " + args[3]);
 
         StorageBarrel s1 = new StorageBarrel(args[0], args[1], 0, args[2], args[3]);
         StorageBarrel s2 = new StorageBarrel(args[0], args[1], 1, args[2], args[3]);//"fich_url1",0,"[a-z]","1000"

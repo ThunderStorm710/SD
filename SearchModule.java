@@ -153,8 +153,8 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
             try {
                 FilaURL_I h = (FilaURL_I) LocateRegistry.getRegistry(1099).lookup("fila_url");
                 System.out.println("Vou adicionar o url " + url + " a fila!");
-                if (h.recUrl(url)){
-                    flag =  true;
+                if (h.recUrl(url)) {
+                    flag = true;
                 }
 
             } catch (Exception e) {
@@ -164,7 +164,8 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         }
         return flag;
     }
-    public void indexarALista(ClienteInfo cliente, String url) throws RemoteException{
+
+    public void indexarALista(ClienteInfo cliente, String url) throws RemoteException {
         if (verificarCliente(cliente)) {
             try {
                 FilaURL_I h = (FilaURL_I) LocateRegistry.getRegistry(1099).lookup("fila_url");
@@ -334,76 +335,80 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         return false;
     }
 
-    public ClienteInfo verificarRegisto(String nome, String email, String username, String password) {
+    public ArrayList<ClienteInfo> obterClientes(String gama, String ip, String porto) throws RemoteException {
+        ArrayList<ClienteInfo> clienteInfos = null;
+        try {
+            for (Storage b : barrels) {
+                if (!b.getGama().equals(gama) || !b.getPorto().equals(porto) || !b.getIp().equals(ip)) {
+                    StorageBarrel_I sI = (StorageBarrel_I) LocateRegistry.getRegistry(Integer.parseInt(porto)).lookup("Storage_Barrel");
+                    clienteInfos = sI.obterClientesBarrel();
+                    break;
+                }
+
+            }
+        } catch (NotBoundException e) {
+            System.out.println("Erro: " + e);
+        }
+        return clienteInfos;
+    }
+
+    public ClienteInfo verificarRegisto(String nome, String email, String username, String password) throws RemoteException {
         boolean flag = true;
         ClienteInfo c1 = null;
 
-        for (ClienteInfo c : clientes) {
-            if (c.getNome().equals(nome) || c.getEmail().equals(email) || c.getUsername().equals(username)) {
-                System.out.println("Nome, username ou email ja se encontram associados a um utilizador ja existente na base de dados...por favor volte a inserir as suas credencias...");
-                flag = false;
-            } else {
-                flag = true;
+        try {
+            if (barrels.size() != 0) {
+                StorageBarrel_I sI = (StorageBarrel_I) LocateRegistry.getRegistry(Integer.parseInt(barrels.get(0).getPorto())).lookup("Storage_Barrel");
+                clientes = sI.obterClientesBarrel();
+            }
+            for (ClienteInfo c : clientes) {
+                if (c.getNome().equals(nome) || c.getEmail().equals(email) || c.getUsername().equals(username)) {
+                    System.out.println("[REGISTO] Nome, username ou email ja se encontram associados a um utilizador ja existente na base de dados...por favor volte a inserir as suas credencias...");
+                    flag = false;
+                } else {
+                    flag = true;
+
+                }
+            }
+            if (flag) {
+                c1 = new ClienteInfo(nome, username, email, password);
+                clientes.add(c1);
+                for (Storage s: barrels) {
+                    System.out.println("[REGISTO] Cliente adicionado aos Barrels");
+                    StorageBarrel_I sI = (StorageBarrel_I) LocateRegistry.getRegistry(Integer.parseInt(s.getPorto())).lookup("Storage_Barrel");
+                    sI.adicionarCliente(c1);
+                }
+                System.out.println("Inscricao validada com sucesso!");
+                System.out.println("Seja bem-vindo, " + nome + "!!\n");
 
             }
+        } catch (NotBoundException e) {
+            System.out.println("Erro: " + e);
         }
-        if (flag) {
-            c1 = new ClienteInfo(nome, username, email, password);
-            clientes.add(c1);
-            escreverFichObjetos();
-            System.out.println("Inscricao validada com sucesso!");
-            System.out.println("Seja bem-vindo, " + nome + "!!\n");
 
-        }
+
 
         return c1;
     }
 
     public ClienteInfo verificarLogin(String username, String password) throws RemoteException {
         ClienteInfo c1 = null;
-        for (ClienteInfo c : clientes) {
-            if (c.getUsername().equals(username) && c.getPassword().equals(password)) {
-                c1 = c;
-            }
-        }
-        return c1;
-    }
-
-    public void escreverFichObjetos() {
-        File fClientesObj = new File("Objetos - Clientes");
         try {
-            FileOutputStream iOS = new FileOutputStream(fClientesObj);
-            ObjectOutputStream oOS = new ObjectOutputStream(iOS);
-            for (ClienteInfo cliente : clientes) {
-                oOS.writeObject(cliente);
-            }
-            oOS.close();
-        } catch (IOException e) {
-            System.out.println("ERRO " + e);
-        }
-    }
+            if (barrels.size() != 0) {
+                StorageBarrel_I sI = (StorageBarrel_I) LocateRegistry.getRegistry(Integer.parseInt(barrels.get(0).getPorto())).lookup("Storage_Barrel");
+                clientes = sI.obterClientesBarrel();
 
-    public void lerFichClientes() {
-        File fClientes = new File("Objetos - Clientes");
-        if (fClientes.exists()) {
-            ClienteInfo cliente;
-            try {
-                FileInputStream fIS = new FileInputStream(fClientes);
-                ObjectInputStream oIS = new ObjectInputStream(fIS);
-                while ((cliente = (ClienteInfo) oIS.readObject()) != null) {
-                    clientes.add(cliente);
+                for (ClienteInfo c : clientes) {
+                    if (c.getUsername().equals(username) && c.getPassword().equals(password)) {
+                        c1 = c;
+                    }
                 }
-                oIS.close();
-            } catch (EOFException e) {
-                System.out.print("");
-
-            } catch (ClassNotFoundException | IOException e) {
-                System.out.println("ERRO " + e);
             }
-        } else {
-            System.out.println("Ficheiro de Objetos de Clientes nao existe...");
+        } catch (NotBoundException e) {
+            System.out.println("Erro: " + e);
         }
 
+        return c1;
     }
 
     public boolean adicionarInfoInicialBarrel(String gama, String ip, String porto) throws RemoteException {
@@ -465,7 +470,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
     public static void main(String[] args) {
         try {
             SearchModule sm1 = new SearchModule();
-            sm1.lerFichClientes();
 
             Registry r = LocateRegistry.createRegistry(1100);
             r.rebind("Search_Module", sm1);
