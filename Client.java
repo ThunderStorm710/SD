@@ -126,6 +126,8 @@ public class Client {
             for (Storage s : barrels) {
                 System.out.println(s);
             }
+        } else {
+            System.out.println("Nao existem Storage Barrels ativos de momento!");
         }
         System.out.println("--- Downloaders ---");
         if (downloaders.size() != 0) {
@@ -133,7 +135,7 @@ public class Client {
                 System.out.println(d);
             }
         } else {
-            System.out.println("Não existem Downloaders ativos de momento!");
+            System.out.println("Nao existem Downloaders ativos de momento!");
         }
         if (pesquisas.size() != 0) {
             List<Map.Entry<String, Integer>> lista = new ArrayList<>(pesquisas.entrySet());
@@ -153,7 +155,7 @@ public class Client {
                 System.out.println(cadeia + " ---> " + top10.get(cadeia));
             }
         } else {
-            System.out.println("Não existem pesquisas registadas de momento!");
+            System.out.println("Nao existem pesquisas registadas de momento!");
         }
     }
 
