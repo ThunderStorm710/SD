@@ -8,8 +8,6 @@ import java.rmi.AccessException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.text.Normalizer;
-import java.time.Duration;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,7 +41,6 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         t.start();
     }
 
-
     public void run() {
         LerArquivoTexto();
         if (type_t == 0) {
@@ -64,12 +61,12 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                     String message = new String(packet.getData(), 0, packet.getLength());
                     String[] protocolo = message.split("\\|");
                     System.out.println(message);
-                    if(protocolo[0].equals("1")) {
+                    if (protocolo[0].equals("1")) {
                         System.out.println(message);
                         escreverFichObjetos(message);
                         lerFichObjetos();
                     }
-                    if(protocolo[0].equals("2")) {
+                    if (protocolo[0].equals("2")) {
                         //System.out.println(message);
                         if (!urlHashmap.containsKey(protocolo[1])) {
                             // Se não existir, cria um novo conjunto de valores
@@ -127,11 +124,8 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                     //urlHashmap = lerFichObjetosHashmap();
 
 
-
-
-
                 }
-            } catch (IOException  e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             } finally {
                 socket.close();
@@ -189,7 +183,47 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
     }
 
     public HashMap<String, Integer> obterPesquisas() throws RemoteException {
+        mapaPesquisas = lerMapaPesquisas();
         return mapaPesquisas;
+    }
+
+
+    public void escreverMapaPesquisas(HashMap<String, Integer> mapaPesquisas){
+        File fich = new File("MapaPesquisas");
+        try {
+            FileOutputStream iOS = new FileOutputStream(fich);
+            ObjectOutputStream oOS = new ObjectOutputStream(iOS);
+
+            oOS.writeObject(mapaPesquisas);
+            oOS.close();
+        } catch (IOException e) {
+            System.out.println("ERRO " + e);
+        }
+
+    }
+
+    public HashMap<String, Integer> lerMapaPesquisas(){
+        HashMap<String, Integer> mapa = null;
+        File fich = new File("MapaPesquisas");
+
+        if (fich.exists()) {
+            try {
+                FileInputStream fIS = new FileInputStream(fich);
+                ObjectInputStream oIS = new ObjectInputStream(fIS);
+                mapa = (HashMap<String, Integer>) oIS.readObject();
+                oIS.close();
+
+
+            } catch (EOFException e) {
+                System.out.print("");
+            } catch (ClassNotFoundException | IOException e) {
+                System.out.println("ERRO " + e);
+            }
+        } else {
+            System.out.println("Ficheiro de Objetos não existe...");
+        }
+        return mapa;
+
     }
 
 
@@ -232,7 +266,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         String titulo = lista[3];
         String url = lista[2];
         String citacao;
-        if (lista.length == 5){
+        if (lista.length == 5) {
             citacao = lista[4];
         } else {
             citacao = " ";
@@ -333,15 +367,20 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
     }
 
     public void adicionarPesquisa(String pesquisa) throws RemoteException {
-        if (mapaPesquisas.containsKey(pesquisa)) {
-            mapaPesquisas.put(pesquisa, mapaPesquisas.get(pesquisa) + 1);
+        mapaPesquisas = lerMapaPesquisas();
+        if (mapaPesquisas != null){
+            if (mapaPesquisas.containsKey(pesquisa)) {
+                mapaPesquisas.put(pesquisa, mapaPesquisas.get(pesquisa) + 1);
+            } else {
+                mapaPesquisas.put(pesquisa, 1);
+            }
         } else {
+            mapaPesquisas = new HashMap<>();
             mapaPesquisas.put(pesquisa, 1);
         }
-        System.out.println("------------------------------432432");
+
         System.out.println(mapaPesquisas);
-        System.out.println("TIPO " + type_t);
-        System.out.println("------------------------------432432");
+        escreverMapaPesquisas(mapaPesquisas);
     }
 
     public HashSet<String[]> obterInfoBarrel(String palavra) throws RemoteException {
