@@ -152,57 +152,6 @@ public class Downloader implements Runnable {
             }
         }
     }
-    public void repetirMulticast() {
-        Runnable runnable = this::repetirMulticastFuncao;
-        Thread thread = new Thread(runnable);
-        thread.start();
-    }
-
-    public void repetirMulticastFuncao() {
-        int i;
-        Duration diff;
-        try {
-            while (true) {
-                synchronized (listaMensagens) {
-                    i = 0;
-
-                    Thread.sleep(3000);
-                }
-
-            }
-
-        } catch (InterruptedException e) {
-            System.out.println("Interrupted");
-        }
-    }
-
-    public void ouvirACK() {
-        Runnable runnable = this::ouvirACKFuncao;
-        Thread thread = new Thread(runnable);
-        thread.start();
-    }
-
-    public void ouvirACKFuncao() {
-        int i;
-        Duration diff;
-        try {
-            while (true) {
-                synchronized (listaMensagens) {
-                    for (String mensagem: listaMensagens.keySet()) {
-                        if (listaMensagens.get(mensagem) - LocalTime.now().getSecond() > 5){
-
-                        }
-                    }
-
-                    Thread.sleep(3000);
-                }
-
-            }
-
-        } catch (InterruptedException e) {
-            System.out.println("Interrupted");
-        }
-    }
 
     public static void main(String[] args) {
         Downloader d1 = new Downloader(1, args[0]);
