@@ -416,6 +416,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
     public HashSet<String> obterLinks(String url) throws RemoteException {
         urlHashmap = lerFichObjetosHashmap();
+        System.out.println(url + "--- " + urlHashmap.get(url));
         return urlHashmap.get(url);
     }
 
@@ -437,7 +438,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
     public static void main(String[] args) {
         if (args.length != 4) {
-            System.out.println("StorageBarrel <NOME DO FICHEIRO PALAVRAS> <NOME DO FICHEIRO URL> <GAMA DA PALAVRAS [a-z]> <PORTO>");
+            System.out.println("Erro: Executar --> StorageBarrel <NOME DO FICHEIRO PALAVRAS> <NOME DO FICHEIRO URL> <GAMA DA PALAVRAS [a-z]> <PORTO>");
             return;
         }
 

@@ -258,7 +258,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                             sI = (StorageBarrel_I) LocateRegistry.getRegistry(porto).lookup("Storage_Barrel");
                             aux = sI.obterInfoBarrel(palavra);
                             lista.add(aux);
-                            System.out.println(aux);
                             break;
                         }
 
@@ -267,14 +266,21 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
 
                 }
                 HashSet<String[]> set = intersection(lista);
+                HashSet<String> aux1;
 
 
                 for (Storage s : barrels) {
                     porto = Integer.parseInt(s.getPorto());
                     sI = (StorageBarrel_I) LocateRegistry.getRegistry(porto).lookup("Storage_Barrel");
                     for (String[] link : set) {
-                        freq = sI.obterLinks(link[0]).size();
-                        mapaFreqs.put(link[0], freq);
+                        aux1 = sI.obterLinks(link[0]);
+                        if (aux1 != null){
+                            freq = aux1.size();
+                            mapaFreqs.put(link[0], freq);
+                        } else {
+                            mapaFreqs.put(link[0], 0);
+                        }
+
                     }
                     break;
                 }
@@ -292,6 +298,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
 
             } catch (Exception e) {
                 System.out.println("Error" + e);
+                e.printStackTrace();
             }
 
         }

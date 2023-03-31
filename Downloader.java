@@ -154,6 +154,10 @@ public class Downloader implements Runnable {
     }
 
     public static void main(String[] args) {
+        if (args.length != 1){
+            System.out.println("Erro: Executar --> Downloader <NOME/ID>");
+            return;
+        }
         Downloader d1 = new Downloader(1, args[0]);
         Downloader d2 = new Downloader(2, args[0]);
         try {
