@@ -250,7 +250,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                         if (flag) {
                             sI = (StorageBarrel_I) LocateRegistry.getRegistry(Integer.parseInt(s.getPorto())).lookup("Storage_Barrel");
                             sI.adicionarPesquisa(pesquisa);
-                            System.out.println("ADICIONEI À PESQUISA");
                             flag = false;
 
                         }

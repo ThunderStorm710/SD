@@ -4,7 +4,6 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.rmi.AccessException;
 import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -13,7 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.rmi.RemoteException;
-import java.util.Map;
 
 public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
     File fClientesObj;
@@ -82,50 +80,8 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                             }
                         }
                         escreverFichObjetosHashmap(urlHashmap);
-                        //urlHashmap = lerFichObjetosHashmap();
-                        /*
-                        if (urlHashmap != null) {
-                            System.out.println("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
-                            for (Map.Entry<String, HashSet<String>> entry : urlHashmap.entrySet()) {
-                                String key = entry.getKey();
-                                HashSet<String> values = entry.getValue();
-                                System.out.println("Chave: " + key);
-                                System.out.println("Valores: " + values);
-                            }
-                            System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
                         }
-                        */
-
                     }
-
-                    /*
-                    try {
-                        ByteArrayInputStream byteStream = new ByteArrayInputStream(data);
-                        ObjectInputStream objectStream = new ObjectInputStream(byteStream);
-                        //HashMap<String, HashSet<String>> urlsLigacoes = (HashMap<String, HashSet<String>>) objectStream.readObject();
-                        Object obj = objectStream.readObject();
-                        if (obj instanceof HashMap) {
-                            HashMap<String, HashSet<String>> urlsLigacoes = (HashMap<String, HashSet<String>>) obj;
-                            escreverFichObjetosHashmap(urlsLigacoes);
-                            urlHashmap = lerFichObjetosHashmap();
-                            // fazer o que precisa ser feito com urlsLigacoes
-                        }
-
-
-                    } catch (UTFDataFormatException e) {
-                        System.out.println("String em codificacao invalida...");
-                    } catch (StreamCorruptedException | InvalidObjectException e) {
-                        System.out.println("Dados de objeto inválidos...");
-                    } catch (ClassCastException | IOException e) {
-                        System.out.println("Classe não encontrada...");
-                    }
-                    */
-
-                    //escreverFichObjetosHashmap(urlsLigacoes);
-                    //urlHashmap = lerFichObjetosHashmap();
-
-
-                }
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
@@ -269,8 +225,6 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
 
         }
-        clientes.ensureCapacity(100);
-
     }
 
     public ArrayList<ClienteInfo> obterClientesBarrel() throws RemoteException {
@@ -462,9 +416,6 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
     public HashSet<String> obterLinks(String url) throws RemoteException {
         urlHashmap = lerFichObjetosHashmap();
-        System.out.println(urlHashmap);
-        System.out.println("------------------------------------------");
-        System.out.println(urlHashmap.get(url));
         return urlHashmap.get(url);
     }
 
