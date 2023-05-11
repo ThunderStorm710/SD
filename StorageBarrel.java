@@ -2,8 +2,9 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.rmi.AccessException;
+import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.text.Normalizer;
@@ -11,7 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.rmi.RemoteException;
-import java.util.Map;
 
 public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
     File fClientesObj;
@@ -19,7 +19,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
     HashMap<String, HashSet<String[]>> index;
     HashMap<String, HashSet<String>> urlHashmap;
     HashMap<String, Integer> mapaPesquisas;
-    private static final int MAX_PACKET_SIZE = 1024;
+    ArrayList<ClienteInfo> clientes;
     ArrayList<String> stopwords;
     int type_t;
     String porto;
@@ -32,6 +32,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         this.urlHashmap = new HashMap<>();
         this.stopwords = new ArrayList<>();
         this.mapaPesquisas = new HashMap<>();
+        this.clientes = new ArrayList<>();
         this.fClientesObj = new File(nome_fich);
         this.fClientesObjHashUrl = new File(nome_fich2);
         this.type_t = type_t;
@@ -51,101 +52,37 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                 InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
                 socket.joinGroup(group);
                 while (true) {
-                    byte[] buffer = new byte[50000];
+                    byte[] buffer = new byte[1024];
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                     socket.receive(packet);
 
-                    System.out.println("Received packet from " + packet.getAddress().getHostAddress() + ":" + packet.getPort() + " with message:");
-                    try {
-                        ByteArrayInputStream bais = new ByteArrayInputStream(packet.getData());
-                        ObjectInputStream ois = new ObjectInputStream(bais);
-                        ArrayList<String> receivedList = (ArrayList<String>) ois.readObject();
+                    //System.out.println("Received packet from " + packet.getAddress().getHostAddress() + ":" + packet.getPort() + " with message:");
+                    String message = new String(packet.getData(), 0, packet.getLength());
 
-                        for (String l : receivedList) {
-                            System.out.println(l);
-                        }
-
-                        escreverFichObjetos(receivedList);
-                        index = lerFichObjetos();
-
-                    } catch (UTFDataFormatException e) {
-                        System.out.println("String em codificacao invalida...");
-                    } catch (StreamCorruptedException e) {
-                        System.out.println("Dados de objeto inválidos...");
+                    String[] protocolo = message.split("\\|");
+                    System.out.println("[BARREL] Mensagem recebida " + message);
+                    if (protocolo[0].equals("1")) {
+                        escreverFichObjetos(message);
+                        lerFichObjetos();
                     }
-                    /*
-                    byte[] buffer2 = new byte[50000];
-                    DatagramPacket packet2 = new DatagramPacket(buffer2, buffer2.length);
-                    socket.receive(packet2);
-
-                    System.out.println("Received packet from " + packet2.getAddress().getHostAddress() + ":" + packet2.getPort() + " with message:");
-                    ByteArrayInputStream bais2 = new ByteArrayInputStream(packet2.getData());
-                    ObjectInputStream ois2 = new ObjectInputStream(bais2);
-
-                    HashMap<String, HashSet<String>> urlsLigacoes = (HashMap<String, HashSet<String>>) ois2.readObject();
-
-                     */
-
-
-                    byte[] data = new byte[0];
-                    while (true) {
-                        byte[] buffer2 = new byte[MAX_PACKET_SIZE];
-                        DatagramPacket packet2 = new DatagramPacket(buffer2, buffer2.length);
-                        socket.receive(packet2);
-
-                        byte[] receivedData = packet2.getData();
-                        int receivedSize = packet2.getLength();
-                        byte[] newData = new byte[data.length + receivedSize];
-                        System.arraycopy(data, 0, newData, 0, data.length);
-                        System.arraycopy(receivedData, 0, newData, data.length, receivedSize);
-                        data = newData;
-
-                        if (receivedSize < MAX_PACKET_SIZE) {
-                            break;
+                    if (protocolo[0].equals("2")) {
+                        //System.out.println(message);
+                        if (!urlHashmap.containsKey(protocolo[1])) {
+                            // Se não existir, cria um conjunto de valores
+                            HashSet<String> values = new HashSet<>();
+                            values.add(protocolo[2]);
+                            urlHashmap.put(protocolo[1], values);
+                        } else {
+                            HashSet<String> values = urlHashmap.get(protocolo[1]);
+                            if (values != null) {
+                                values.add(protocolo[2]);
+                                urlHashmap.put(protocolo[1], values);
+                            }
+                        }
+                        escreverFichObjetosHashmap(urlHashmap);
                         }
                     }
-
-                    try {
-                        ByteArrayInputStream byteStream = new ByteArrayInputStream(data);
-                        ObjectInputStream objectStream = new ObjectInputStream(byteStream);
-                        //HashMap<String, HashSet<String>> urlsLigacoes = (HashMap<String, HashSet<String>>) objectStream.readObject();
-                        Object obj = objectStream.readObject();
-                        if (obj instanceof HashMap) {
-                            HashMap<String, HashSet<String>> urlsLigacoes = (HashMap<String, HashSet<String>>) obj;
-                            escreverFichObjetosHashmap(urlsLigacoes);
-                            urlHashmap = lerFichObjetosHashmap();
-                            // fazer o que precisa ser feito com urlsLigacoes
-                        }
-
-
-                    } catch (UTFDataFormatException e) {
-                        System.out.println("String em codificacao invalida...");
-                    } catch (StreamCorruptedException | InvalidObjectException e) {
-                        System.out.println("Dados de objeto inválidos...");
-                    } catch (ClassCastException | IOException e){
-                        System.out.println("Classe não encontrada...");
-                    }
-
-
-
-                    //escreverFichObjetosHashmap(urlsLigacoes);
-                    //urlHashmap = lerFichObjetosHashmap();
-
-
-                    if (urlHashmap != null) {
-                        System.out.println("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
-                        for (Map.Entry<String, HashSet<String>> entry : urlHashmap.entrySet()) {
-                            String key = entry.getKey();
-                            HashSet<String> values = entry.getValue();
-                            System.out.println("Chave: " + key);
-                            System.out.println("Valores: " + values);
-                        }
-                        System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-                    }
-
-
-                }
-            } catch (IOException | ClassNotFoundException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             } finally {
                 socket.close();
@@ -154,12 +91,17 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
             try {
                 SearchModule_I h = (SearchModule_I) LocateRegistry.getRegistry(1100).lookup("Search_Module");
-                if (!h.adicionarInfoInicialBarrel(gama_palavra, porto)) {
-                    System.out.println("Nao foi possivel ligar ao Search Module...");
-                    return;
-                }
+                InetAddress enderecoIP = InetAddress.getLocalHost();
+                String ip = enderecoIP.getHostAddress();
+
+                index = h.obterInfoFicheiros(gama_palavra, ip, porto);
+                urlHashmap = h.obterURLFicheiros(gama_palavra, ip, porto);
+                lerFichClientes(h, gama_palavra, ip, porto);
+
             } catch (RemoteException | java.rmi.NotBoundException e) {
                 System.out.println("Interrupted");
+            } catch (UnknownHostException e) {
+                System.out.println("UnknownHostException");
             }
         } else if (type_t == 2) {
             final String MULTICAST_ADDRESS_2 = "224.3.2.2";
@@ -169,7 +111,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                 try {
                     socket2 = new MulticastSocket();
                     InetAddress enderecoIP = InetAddress.getLocalHost();
-                    String di = "2|" + enderecoIP.getHostAddress() + "|" + porto + "|" + gama_palavra;
+                    String di = "20|" + enderecoIP.getHostAddress() + "|" + porto + "|" + gama_palavra;
                     byte[] buffer2 = di.getBytes();
 
                     InetAddress group2 = InetAddress.getByName(MULTICAST_ADDRESS_2);
@@ -189,6 +131,125 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
             }
         }
     }
+
+    public HashMap<String, HashSet<String[]>> obterIndex() throws RemoteException {
+        return lerFichObjetos();
+    }
+
+    public HashMap<String, HashSet<String>> obterURLMap() throws RemoteException {
+        return lerFichObjetosHashmap();
+    }
+
+    public HashMap<String, Integer> obterPesquisas() throws RemoteException {
+        mapaPesquisas = lerMapaPesquisas();
+        return mapaPesquisas;
+    }
+
+    public void escreverMapaPesquisas(HashMap<String, Integer> mapaPesquisas) {
+        File fich = new File("MapaPesquisas");
+        try {
+            FileOutputStream iOS = new FileOutputStream(fich);
+            ObjectOutputStream oOS = new ObjectOutputStream(iOS);
+
+            oOS.writeObject(mapaPesquisas);
+            oOS.close();
+        } catch (IOException e) {
+            System.out.println("ERRO " + e);
+        }
+
+    }
+
+    public HashMap<String, Integer> lerMapaPesquisas() {
+        HashMap<String, Integer> mapa = null;
+        File fich = new File("MapaPesquisas");
+
+        if (fich.exists()) {
+            try {
+                FileInputStream fIS = new FileInputStream(fich);
+                ObjectInputStream oIS = new ObjectInputStream(fIS);
+                mapa = (HashMap<String, Integer>) oIS.readObject();
+                oIS.close();
+
+
+            } catch (EOFException e) {
+                System.out.print("");
+            } catch (ClassNotFoundException | IOException e) {
+                System.out.println("ERRO " + e);
+            }
+        } else {
+            System.out.println("Ficheiro de Objetos não existe...");
+        }
+        return mapa;
+
+    }
+
+    public void escreverFichClientes() {
+        File fClientesObj = new File("Objetos - Clientes");
+        try {
+            FileOutputStream iOS = new FileOutputStream(fClientesObj);
+            ObjectOutputStream oOS = new ObjectOutputStream(iOS);
+            for (ClienteInfo cliente : clientes) {
+
+                oOS.writeObject(cliente);
+            }
+            oOS.close();
+        } catch (IOException e) {
+            System.out.println("ERRO " + e);
+        }
+    }
+
+    public void lerFichClientes(SearchModule_I s, String gama_palavra, String ip, String porto) {
+        File fClientes = new File("Objetos - Clientes");
+        if (fClientes.exists()) {
+            ClienteInfo cliente;
+            try {
+                FileInputStream fIS = new FileInputStream(fClientes);
+                ObjectInputStream oIS = new ObjectInputStream(fIS);
+                while ((cliente = (ClienteInfo) oIS.readObject()) != null) {
+                    clientes.add(cliente);
+                }
+                oIS.close();
+            } catch (EOFException e) {
+                System.out.print("");
+
+            } catch (ClassNotFoundException | IOException e) {
+                System.out.println("ERRO " + e);
+            }
+        } else {
+            try {
+                System.out.println("[LEITURA FICHEIRO] Ficheiro de Objetos de Clientes nao existe...");
+                clientes = s.obterClientes(gama_palavra, ip, porto);
+            } catch (RemoteException e) {
+                System.out.println("Interrupted Remote: " + e);
+            }
+
+
+        }
+    }
+
+    public ArrayList<ClienteInfo> obterClientesBarrel() throws RemoteException {
+        try {
+            InetAddress enderecoIP = InetAddress.getLocalHost();
+            String ip = enderecoIP.getHostAddress();
+            SearchModule_I h = (SearchModule_I) LocateRegistry.getRegistry(1100).lookup("Search_Module");
+
+            lerFichClientes(h, gama_palavra, ip, porto);
+        } catch (UnknownHostException | NotBoundException e) {
+            e.printStackTrace();
+        }
+
+        // não era suposto ser preciso fazer a ligação, mas só funciona assim
+        return clientes;
+    }
+
+    public void adicionarCliente(ClienteInfo cliente) throws RemoteException {
+        if (this.clientes == null) {
+            clientes = new ArrayList<>();
+        }
+        this.clientes.add(cliente);
+        escreverFichClientes();
+    }
+
 
     public void escreverFichObjetosHashmap(HashMap<String, HashSet<String>> urlsHash) {
 
@@ -224,42 +285,64 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         return urlsHash;
     }
 
-    public void escreverFichObjetos(ArrayList<String> receivedList) {
-        String titulo = receivedList.get(1);
-        String url = receivedList.get(0);
-        String citacao = receivedList.get(2);
-        receivedList.remove(2);
-        receivedList.remove(1);
-        receivedList.remove(0);
+    public void escreverFichObjetos(String mensagem) {
+        String[] lista = mensagem.split("\\|");
+        String titulo = lista[3];
+        String url = lista[2];
+        String citacao;
+        if (lista.length == 5) {
+            citacao = lista[4];
+        } else {
+            citacao = " ";
+        }
+
+
         try {
             FileOutputStream iOS = new FileOutputStream(fClientesObj);
             ObjectOutputStream oOS = new ObjectOutputStream(iOS);
-            for (String palavra : receivedList) {
-                // Cria um array de valores
-                String[] valores = {url, titulo, citacao};
-                String p_ascii = Normalizer.normalize(palavra, Normalizer.Form.NFD);
 
-                if (!palavra.equals("") && !stopwords.contains(palavra) && Character.toLowerCase(p_ascii.charAt(0)) >= Character.toLowerCase(gama_palavra.charAt(1)) && Character.toLowerCase(p_ascii.charAt(0)) <= Character.toLowerCase(gama_palavra.charAt(3))) {
-                    if (!index.containsKey(palavra)) {
-                        // Se não existir, cria um novo conjunto de valores
-                        HashSet<String[]> values = new HashSet<>();
-                        values.add(valores);
-                        index.put(palavra, values);
-                    } else {
-                        HashSet<String[]> v = index.get(palavra);
-                        int flag = 0;
-                        for (String[] va : v) {
-                            if (va[0].equals(valores[0])) {
-                                flag = 1;
-                                break;
-                            }
+            // Cria um array de valores
+            String[] valores = {url, titulo, citacao};
+
+            String palavra = lista[1];
+            String p_ascii = Normalizer.normalize(palavra, Normalizer.Form.NFD);
+            if (!palavra.equals("") && !stopwords.contains(palavra) && Character.toLowerCase(p_ascii.charAt(0)) >= Character.toLowerCase(gama_palavra.charAt(1)) && Character.toLowerCase(p_ascii.charAt(0)) <= Character.toLowerCase(gama_palavra.charAt(3))) {
+                if (!index.containsKey(palavra)) {
+                    // Se não existir, cria um conjunto de valores
+                    HashSet<String[]> values = new HashSet<>();
+                    values.add(valores);
+                    index.put(palavra, values);
+                } else {
+                    HashSet<String[]> v = index.get(palavra);
+                    int flag = 0;
+                    for (String[] va : v) {
+                        if (va[0].equals(valores[0])) {
+                            flag = 1;
+                            break;
                         }
-                        if (flag == 0) {
-                            index.get(palavra).add(valores);
-                        }
+                    }
+                    if (flag == 0) {
+                        index.get(palavra).add(valores);
                     }
                 }
             }
+            /*
+            for (String key : index.keySet()) {
+                System.out.println("Key: " + key);
+
+                // Access the values associated with the current key
+                HashSet<String[]> values = index.get(key);
+                System.out.print("Values:[");
+                for (String[] val : values) {
+                    System.out.print("[");
+                    for (String v : val) {
+                        System.out.print(v + " ,");
+                    }
+                    System.out.println("]");
+                }
+            }
+
+            */
             oOS.writeObject(index);
             oOS.close();
         } catch (IOException e) {
@@ -273,8 +356,15 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
             try {
                 FileInputStream fIS = new FileInputStream(fClientesObj);
                 ObjectInputStream oIS = new ObjectInputStream(fIS);
-                palavras = (HashMap<String, HashSet<String[]>>) oIS.readObject();
+                Object obj = oIS.readObject();
+                if (obj instanceof HashMap) {
+                    palavras = (HashMap<String, HashSet<String[]>>) obj;
+                } else {
+                    System.out.println("Error: Invalid object or null returned from input stream.");
+                }
+                //System.out.println(palavras);
                 oIS.close();
+                /*
                 for (String key : palavras.keySet()) {
                     System.out.println("Key: " + key);
 
@@ -290,6 +380,8 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                     }
                 }
 
+                 */
+
             } catch (EOFException e) {
                 System.out.print("");
             } catch (ClassNotFoundException | IOException e) {
@@ -302,11 +394,20 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
     }
 
     public void adicionarPesquisa(String pesquisa) throws RemoteException {
-        if (mapaPesquisas.containsKey(pesquisa)) {
-            mapaPesquisas.put(pesquisa, mapaPesquisas.get(pesquisa) + 1);
+        mapaPesquisas = lerMapaPesquisas();
+        if (mapaPesquisas != null) {
+            if (mapaPesquisas.containsKey(pesquisa)) {
+                mapaPesquisas.put(pesquisa, mapaPesquisas.get(pesquisa) + 1);
+            } else {
+                mapaPesquisas.put(pesquisa, 1);
+            }
         } else {
+            mapaPesquisas = new HashMap<>();
             mapaPesquisas.put(pesquisa, 1);
         }
+
+        System.out.println(mapaPesquisas);
+        escreverMapaPesquisas(mapaPesquisas);
     }
 
     public HashSet<String[]> obterInfoBarrel(String palavra) throws RemoteException {
@@ -316,9 +417,6 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
     public HashSet<String> obterLinks(String url) throws RemoteException {
         urlHashmap = lerFichObjetosHashmap();
-        System.out.println(urlHashmap);
-        System.out.println("------------------------------------------");
-        System.out.println(urlHashmap.get(url));
         return urlHashmap.get(url);
     }
 
@@ -340,10 +438,9 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
     public static void main(String[] args) {
         if (args.length != 4) {
-            System.out.println("StorageBarrel <NOME DO FICHEIRO> <GAMA DA PALAVRAS [a-z]> <PORTO>");
+            System.out.println("Erro: Executar --> StorageBarrel <NOME DO FICHEIRO PALAVRAS> <NOME DO FICHEIRO URL> <GAMA DA PALAVRAS [a-z]> <PORTO>");
             return;
         }
-        System.out.println("ARGS" + args[0] + " --- " + args[3]);
 
         StorageBarrel s1 = new StorageBarrel(args[0], args[1], 0, args[2], args[3]);
         StorageBarrel s2 = new StorageBarrel(args[0], args[1], 1, args[2], args[3]);//"fich_url1",0,"[a-z]","1000"

@@ -3,19 +3,21 @@ import java.util.Objects;
 
 public class ClienteInfo implements Serializable {
     private String nome, username, password, email;
+    private int porto;
 
     public ClienteInfo() {
     }
 
-    public ClienteInfo(String nome, String username, String email, String password) {
+    public ClienteInfo(String nome, String username, String email, String password, int porto) {
         this.nome = nome;
         this.password = password;
         this.username = username;
         this.email = email;
+        this.porto = porto;
     }
 
     public String toString() {
-        return "Cliente:" + nome + "/" + username + " Email: " + email + " Password: " + password;
+        return "Cliente:" + nome + "/" + username + " Email: " + email + " Password: " + password + "\n---> Porto: " + porto;
     }
 
     public String getNome() {
@@ -48,5 +50,13 @@ public class ClienteInfo implements Serializable {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public void setPorto(int porto) {
+        this.porto = porto;
+    }
+
+    public int getPorto() {
+        return porto;
     }
 }

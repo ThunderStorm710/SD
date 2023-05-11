@@ -7,27 +7,29 @@ import java.io.*;
 import java.net.*;
 import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.*;
 
 public class Downloader implements Runnable {
 
-    HashMap<String, HashSet<String>> urlsLig;
+
     private static final int MAX_CHUNK_SIZE = 1024;
     private final String MULTICAST_ADDRESS = "224.3.2.1";
     private final int PORT = 4321;
     private final String MULTICAST_ADDRESS_2 = "224.3.2.2";
     private final int PORT_2 = 4322;
-
+    private HashMap<String, Integer> listaMensagens;
     Thread t;
     int type_t;
     String id;
 
     public Downloader(int type_t, String id) {
-        this.urlsLig = new HashMap<>();
         t = new Thread(this);
         t.start();
         this.type_t = type_t;
         this.id = id;
+        this.listaMensagens = new HashMap<>();
     }
 
     public void run() {
@@ -53,6 +55,8 @@ public class Downloader implements Runnable {
                         ArrayList<String> lista = new ArrayList<>();
 
                         if (url != null) {
+
+                            String citacao;
                             System.out.println(url);
 
                             Document doc = Jsoup.connect(url).ignoreHttpErrors(true).get();
@@ -64,7 +68,11 @@ public class Downloader implements Runnable {
                             lista.add(title);
 
                             if (firstParagraph != null) {
+                                citacao = firstParagraph.text();
                                 lista.add(firstParagraph.text());
+                            } else {
+                                citacao = " ";
+                                lista.add(" ");
                             }
 
 
@@ -75,47 +83,19 @@ public class Downloader implements Runnable {
                                 String tok = tokens.nextToken().toLowerCase().replaceAll("[,.\\[\\]{}!?:;()<>+*/%]", "");
                                 lista.add(tok);
                             }
-                            System.out.println("++++++++++++");
-                            for (String numero : lista) {
-                                System.out.println(numero);
-                            }
-
-                            System.out.println("++++++++++++");
-                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                            ObjectOutputStream oos = new ObjectOutputStream(baos);
-                            oos.writeObject(lista);
-                            byte[] serializedData = baos.toByteArray();
-
                             InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
-                            DatagramPacket packet = new DatagramPacket(serializedData, serializedData.length, group, PORT);
-
-                            socket.send(packet);
-
-
-                            if (urlsLig != null) {
+                            for (int i = 3; i < lista.size(); i++) {
                                 try {
-                                    ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-                                    ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
-                                    objectStream.writeObject(urlsLig);
-                                    byte[] data = byteStream.toByteArray();
-
-                                    int offset = 0;
-                                    while (offset < data.length) {
-                                        int chunkSize = Math.min(MAX_CHUNK_SIZE, data.length - offset);
-                                        byte[] chunkData = new byte[chunkSize];
-                                        System.arraycopy(data, offset, chunkData, 0, chunkSize);
-
-                                        DatagramPacket packet2 = new DatagramPacket(chunkData, chunkSize, group, PORT);
-
-                                        socket.send(packet2);
-
-                                        offset += chunkSize;
-                                    }
+                                    String frase = "1|" + lista.get(i) + "|" + url + "|" + title + "|" + citacao;
+                                    listaMensagens.put(frase, LocalTime.now().getSecond());
+                                    byte[] buffer = frase.getBytes();
+                                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length, group, PORT);
+                                    socket.send(packet);
                                 } catch (UTFDataFormatException e) {
                                     System.out.println("String em codificacao invalida...");
                                 } catch (StreamCorruptedException e) {
                                     System.out.println("Dados de objeto inválidos...");
-                                } catch (IOException | ClassCastException e) {
+                                } catch (IOException e) {
                                     System.out.println("Erro: " + e);
                                 }
                             }
@@ -123,27 +103,13 @@ public class Downloader implements Runnable {
 
                             Elements links = doc.select("a[href]");
                             for (Element link : links) {
-                                if (!urlsLig.containsKey(link.attr("abs:href"))) {
-                                    HashSet<String> values = new HashSet<>();
-                                    values.add(url);
-                                    urlsLig.put(link.attr("abs:href"), values);
-                                } else {
-                                    HashSet<String> values = urlsLig.get(link.attr("abs:href"));
-                                    if (values != null) {
-                                        values.add(url);
-                                        urlsLig.put(link.attr("abs:href"), values);
-                                    }
-                                }
-                                // PRINT DO HASHMAP
-                                //System.out.println("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
-                                //for (Map.Entry<String, HashSet<String>> entry : urlsLig.entrySet()) {
-                                //    String key = entry.getKey();
-                                //    HashSet<String> values = entry.getValue();
-                                //    System.out.println("Chave: " + key);
-                                //    System.out.println("Valores: " + values);
-                                //}
-                                //System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-                                //System.out.println( link.attr("abs:href") );
+                                String frase2 = "2|" + link.attr("abs:href") + "|" + url;
+                                listaMensagens.put(frase2, LocalTime.now().getSecond());
+                                byte[] buffer2 = frase2.getBytes();
+                                DatagramPacket packet2 = new DatagramPacket(buffer2, buffer2.length, group, PORT);
+                                socket.send(packet2);
+
+
                                 h.recUrl(link.attr("abs:href"));
 
                             }
@@ -161,7 +127,9 @@ public class Downloader implements Runnable {
             MulticastSocket socket2 = null;
             while (true) {
                 try {
-                    String di = "1|" + id + "|" + PORT_2;
+                    InetAddress enderecoIP = InetAddress.getLocalHost();
+                    String ip = enderecoIP.getHostAddress();
+                    String di = "10|" + id + "|" + ip + "|" + PORT_2;
 
                     byte[] buffer2 = di.getBytes();
                     socket2 = new MulticastSocket(PORT);
@@ -184,6 +152,10 @@ public class Downloader implements Runnable {
     }
 
     public static void main(String[] args) {
+        if (args.length != 1) {
+            System.out.println("Erro: Executar --> Downloader <NOME/ID>");
+            return;
+        }
         Downloader d1 = new Downloader(1, args[0]);
         Downloader d2 = new Downloader(2, args[0]);
         try {

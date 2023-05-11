@@ -1,10 +1,38 @@
+import java.io.*;
+import java.net.*;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.util.*;
 
-public class Client {
+public class Client implements Serializable, Runnable {
 
-    public Client() {
+    transient Thread threadTempoReal;
+
+
+    public Client() throws RemoteException {
+        threadTempoReal = new Thread(this);
+        threadTempoReal.start();
+    }
+
+
+    public void run() {
+        MulticastSocket socket;
+        String MULTICAST_ADDRESS = "224.3.2.3";
+        int PORT = 1234;
+        try {
+            socket = new MulticastSocket(PORT);  // create socket and bind it
+            InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
+            socket.joinGroup(group);
+            while (true) {
+                byte[] buffer = new byte[2048];
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                socket.receive(packet);
+                String message = new String(packet.getData(), 0, packet.getLength());
+                System.out.println(message);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -21,6 +49,7 @@ public class Client {
                 System.out.print("Insira a sua password: ");
                 password = sc.nextLine();
                 c1 = h.verificarLogin(username, password);
+
 
                 if (contador == 3) {
                     System.out.println("Numero tentativas excedidas...");
@@ -42,8 +71,7 @@ public class Client {
         return c1;
     }
 
-
-    public static ClienteInfo registar(SearchModule_I h) {
+    public static ClienteInfo registar(SearchModule_I h, int porto) {
         boolean flag = false;
         String nome, email, password, username;
         Scanner sc = new Scanner(System.in);
@@ -61,7 +89,7 @@ public class Client {
                 password = sc.nextLine();
 
 
-                c1 = h.verificarRegisto(nome, email, username, password);
+                c1 = h.verificarRegisto(nome, email, username, password, porto);
                 if (c1 == null) {
                     System.out.println("Nome, username ou email  ja se encontram associados a um utilizador ja existente na base de dados...por favor volte a inserir as suas credencias...");
                 } else {
@@ -80,9 +108,20 @@ public class Client {
     public static void indexarURL(SearchModule_I h, ClienteInfo cliente) throws RemoteException {
         Scanner sc = new Scanner(System.in);
         System.out.print("Insira um URL: ");
-        String opcao = sc.nextLine();
+        String url = sc.nextLine();
         System.out.println("Vou indexar!");
-        h.indexarURL(cliente, opcao);
+        if (!h.indexarURL(cliente, url)) {
+            System.out.print("URL ja foi visitado!\nQuer indexar a mesma? S/N");
+            String opcao = sc.nextLine();
+            opcao = opcao.toUpperCase();
+            if (opcao.equals("S")) {
+                h.indexarALista(cliente, url);
+                System.out.println("URL indexado!");
+            } else {
+                System.out.println("URL nao indexado!");
+            }
+        }
+
     }
 
     public static void consultarListaPaginas(SearchModule_I h, ClienteInfo cliente) throws RemoteException {
@@ -108,18 +147,44 @@ public class Client {
         System.out.println("--- Informacoes gerais do sistema ---");
         ArrayList<Storage> barrels = h.obterInfoBarrels();
         ArrayList<DownloaderInfo> downloaders = h.obterInfoDownloaders();
+
+        HashMap<String, Integer> pesquisas = h.pesquisasFrequentes();
         if (barrels.size() != 0) {
             System.out.println("--- Storage Barrels ---");
 
             for (Storage s : barrels) {
                 System.out.println(s);
             }
+        } else {
+            System.out.println("Nao existem Storage Barrels ativos de momento!");
         }
+        System.out.println("--- Downloaders ---");
         if (downloaders.size() != 0) {
-            System.out.println("--- Downloaders ---");
             for (DownloaderInfo d : downloaders) {
                 System.out.println(d);
             }
+        } else {
+            System.out.println("Nao existem Downloaders ativos de momento!");
+        }
+        if (pesquisas.size() != 0) {
+            List<Map.Entry<String, Integer>> lista = new ArrayList<>(pesquisas.entrySet());
+            lista.sort((o1, o2) -> o2.getValue().compareTo(o1.getValue()));
+
+            HashMap<String, Integer> top10 = new LinkedHashMap<>();
+            int i = 0;
+            for (Map.Entry<String, Integer> entrada : lista) {
+                if (i >= 10) {
+                    break;
+                }
+                top10.put(entrada.getKey(), entrada.getValue());
+                i++;
+            }
+
+            for (String cadeia : top10.keySet()) {
+                System.out.println(cadeia + " ---> " + top10.get(cadeia));
+            }
+        } else {
+            System.out.println("Nao existem pesquisas registadas de momento!");
         }
     }
 
@@ -218,6 +283,7 @@ public class Client {
         String opcao;
         boolean entrada = false;
         ClienteInfo cliente = null;
+        int porto = 1101;
         try {
             SearchModule_I h = (SearchModule_I) LocateRegistry.getRegistry(1100).lookup("Search_Module");
 
@@ -234,7 +300,7 @@ public class Client {
 
                 switch (opcao) {
                     case "1":
-                        if ((cliente = registar(h)) != null) {
+                        if ((cliente = registar(h, porto)) != null) {
                             entrada = true;
                         }
 
@@ -253,6 +319,7 @@ public class Client {
                 }
             }
             if (entrada) {
+                Client c = new Client();
                 label:
                 while (true) {
 
@@ -284,8 +351,6 @@ public class Client {
                             break;
                         case "4":
                             obterInfoGerais(h);
-
-
                             break;
                         case "5":
                             break label;
