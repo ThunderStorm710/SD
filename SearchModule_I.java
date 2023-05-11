@@ -12,7 +12,7 @@ public interface SearchModule_I extends Remote {
 
     public ClienteInfo verificarLogin(String username, String password) throws RemoteException;
 
-    public ClienteInfo verificarRegisto(String nome, String email, String username, String password) throws RemoteException;
+    public ClienteInfo verificarRegisto(String nome, String email, String username, String password, int porto) throws RemoteException;
 
     public boolean adicionarInfoInicialBarrel(String gama, String ip, String porto) throws RemoteException;
 

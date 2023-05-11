@@ -1,10 +1,38 @@
+import java.io.*;
+import java.net.*;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.util.*;
 
-public class Client {
+public class Client implements Serializable, Runnable {
 
-    public Client() {
+    transient Thread threadTempoReal;
+
+
+    public Client() throws RemoteException {
+        threadTempoReal = new Thread(this);
+        threadTempoReal.start();
+    }
+
+
+    public void run() {
+        MulticastSocket socket;
+        String MULTICAST_ADDRESS = "224.3.2.3";
+        int PORT = 1234;
+        try {
+            socket = new MulticastSocket(PORT);  // create socket and bind it
+            InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
+            socket.joinGroup(group);
+            while (true) {
+                byte[] buffer = new byte[2048];
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                socket.receive(packet);
+                String message = new String(packet.getData(), 0, packet.getLength());
+                System.out.println(message);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -21,6 +49,7 @@ public class Client {
                 System.out.print("Insira a sua password: ");
                 password = sc.nextLine();
                 c1 = h.verificarLogin(username, password);
+
 
                 if (contador == 3) {
                     System.out.println("Numero tentativas excedidas...");
@@ -42,7 +71,7 @@ public class Client {
         return c1;
     }
 
-    public static ClienteInfo registar(SearchModule_I h) {
+    public static ClienteInfo registar(SearchModule_I h, int porto) {
         boolean flag = false;
         String nome, email, password, username;
         Scanner sc = new Scanner(System.in);
@@ -60,7 +89,7 @@ public class Client {
                 password = sc.nextLine();
 
 
-                c1 = h.verificarRegisto(nome, email, username, password);
+                c1 = h.verificarRegisto(nome, email, username, password, porto);
                 if (c1 == null) {
                     System.out.println("Nome, username ou email  ja se encontram associados a um utilizador ja existente na base de dados...por favor volte a inserir as suas credencias...");
                 } else {
@@ -85,7 +114,7 @@ public class Client {
             System.out.print("URL ja foi visitado!\nQuer indexar a mesma? S/N");
             String opcao = sc.nextLine();
             opcao = opcao.toUpperCase();
-            if (opcao.equals("S")){
+            if (opcao.equals("S")) {
                 h.indexarALista(cliente, url);
                 System.out.println("URL indexado!");
             } else {
@@ -248,11 +277,13 @@ public class Client {
         }
     }
 
+
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         String opcao;
         boolean entrada = false;
         ClienteInfo cliente = null;
+        int porto = 1101;
         try {
             SearchModule_I h = (SearchModule_I) LocateRegistry.getRegistry(1100).lookup("Search_Module");
 
@@ -269,7 +300,7 @@ public class Client {
 
                 switch (opcao) {
                     case "1":
-                        if ((cliente = registar(h)) != null) {
+                        if ((cliente = registar(h, porto)) != null) {
                             entrada = true;
                         }
 
@@ -288,6 +319,7 @@ public class Client {
                 }
             }
             if (entrada) {
+                Client c = new Client();
                 label:
                 while (true) {
 

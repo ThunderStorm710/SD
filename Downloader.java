@@ -70,8 +70,7 @@ public class Downloader implements Runnable {
                             if (firstParagraph != null) {
                                 citacao = firstParagraph.text();
                                 lista.add(firstParagraph.text());
-                            }
-                            else{
+                            } else {
                                 citacao = " ";
                                 lista.add(" ");
                             }
@@ -85,14 +84,14 @@ public class Downloader implements Runnable {
                                 lista.add(tok);
                             }
                             InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
-                            for(int i = 3; i<lista.size();i++) {
+                            for (int i = 3; i < lista.size(); i++) {
                                 try {
                                     String frase = "1|" + lista.get(i) + "|" + url + "|" + title + "|" + citacao;
                                     listaMensagens.put(frase, LocalTime.now().getSecond());
                                     byte[] buffer = frase.getBytes();
                                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length, group, PORT);
                                     socket.send(packet);
-                                }catch (UTFDataFormatException e) {
+                                } catch (UTFDataFormatException e) {
                                     System.out.println("String em codificacao invalida...");
                                 } catch (StreamCorruptedException e) {
                                     System.out.println("Dados de objeto inválidos...");
@@ -100,7 +99,6 @@ public class Downloader implements Runnable {
                                     System.out.println("Erro: " + e);
                                 }
                             }
-
 
 
                             Elements links = doc.select("a[href]");
@@ -131,7 +129,7 @@ public class Downloader implements Runnable {
                 try {
                     InetAddress enderecoIP = InetAddress.getLocalHost();
                     String ip = enderecoIP.getHostAddress();
-                    String di = "1|" + id + "|" + ip + "|" + PORT_2;
+                    String di = "10|" + id + "|" + ip + "|" + PORT_2;
 
                     byte[] buffer2 = di.getBytes();
                     socket2 = new MulticastSocket(PORT);
@@ -154,7 +152,7 @@ public class Downloader implements Runnable {
     }
 
     public static void main(String[] args) {
-        if (args.length != 1){
+        if (args.length != 1) {
             System.out.println("Erro: Executar --> Downloader <NOME/ID>");
             return;
         }

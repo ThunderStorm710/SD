@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.*;
@@ -17,6 +18,9 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
     private ArrayList<Storage> barrels;
     private ArrayList<DownloaderInfo> downloaders;
     transient Thread t;
+
+    private final String MULTICAST_ADDRESS = "224.3.2.3";
+    private final int PORT = 1234;
 
     public SearchModule() throws RemoteException {
         super();
@@ -42,6 +46,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
     public void verificarBarrelsFuncao() {
         int i;
         Duration diff;
+
         try {
             while (true) {
                 synchronized (barrels) {
@@ -49,7 +54,8 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                     while (i < barrels.size()) {
                         diff = Duration.between(barrels.get(i).getTempo(), LocalTime.now());
                         if (diff.getSeconds() > 5) {
-                            System.out.println("REMOVI " + barrels.get(i));
+                            //System.out.println("REMOVI " + barrels.get(i));
+                            atualizarInfo("-", barrels.get(i), null);
                             barrels.remove(i);
                         }
                     }
@@ -73,7 +79,8 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                     while (i < downloaders.size()) {
                         diff = Duration.between(downloaders.get(i).getTempo(), LocalTime.now());
                         if (diff.getSeconds() > 5) {
-                            System.out.println("REMOVI " + downloaders.get(i));
+                            //System.out.println("REMOVI " + downloaders.get(i));
+                            atualizarInfo("-", null, downloaders.get(i));
                             downloaders.remove(i);
                         }
                         i++;
@@ -88,7 +95,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
 
     public void run() {
 
-        MulticastSocket socket = null;
+        MulticastSocket socket;
         DatagramPacket packet;
         String[] linha;
         String MULTICAST_ADDRESS = "224.3.2.2";
@@ -107,7 +114,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                 linha = message.split("\\|");
 
                 switch (linha[0]) {
-                    case "1" -> {
+                    case "10" -> {
                         flag = true;
                         if (linha.length == 4) {
                             for (DownloaderInfo d : downloaders) {
@@ -119,10 +126,12 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                             }
                             if (flag) {
                                 downloaders.add(new DownloaderInfo(linha[1], linha[2], linha[3]));
+                                atualizarInfo("+", null, downloaders.get(downloaders.size() - 1));
+
                             }
                         }
                     }
-                    case "2" -> {
+                    case "20" -> {
                         flag = true;
                         if (linha.length == 4) {
                             for (Storage s : barrels) {
@@ -134,6 +143,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                             }
                             if (flag) {
                                 barrels.add(new Storage(linha[3], linha[1], linha[2]));
+                                atualizarInfo("+", barrels.get(barrels.size() - 1), null);
                             }
                         }
                     }
@@ -274,7 +284,7 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                     sI = (StorageBarrel_I) LocateRegistry.getRegistry(porto).lookup("Storage_Barrel");
                     for (String[] link : set) {
                         aux1 = sI.obterLinks(link[0]);
-                        if (aux1 != null){
+                        if (aux1 != null) {
                             freq = aux1.size();
                             mapaFreqs.put(link[0], freq);
                         } else {
@@ -358,7 +368,35 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         return clienteInfos;
     }
 
-    public ClienteInfo verificarRegisto(String nome, String email, String username, String password) throws RemoteException {
+    public void atualizarInfo(String flag, Storage s, DownloaderInfo d) {
+        try {
+            MulticastSocket socket;
+            String pacote = "";
+            if (flag.equals("+")) {
+                pacote += "Novo ";
+            } else if (flag.equals("-")) {
+                pacote += "Fechado ";
+            }
+
+            if (s != null) {
+                pacote += s;
+            } else if (d != null) {
+                pacote += d;
+            }
+
+            byte[] buffer = pacote.getBytes();
+            socket = new MulticastSocket(PORT);
+            InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
+            DatagramPacket packet = new DatagramPacket(buffer, buffer.length, group, PORT);
+            System.out.println(pacote + "---------");
+            socket.send(packet);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public ClienteInfo verificarRegisto(String nome, String email, String username, String password, int porto) throws RemoteException {
         boolean flag = true;
         ClienteInfo c1 = null;
 
@@ -367,19 +405,22 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                 StorageBarrel_I sI = (StorageBarrel_I) LocateRegistry.getRegistry(Integer.parseInt(barrels.get(0).getPorto())).lookup("Storage_Barrel");
                 clientes = sI.obterClientesBarrel();
             }
-            for (ClienteInfo c : clientes) {
-                if (c.getNome().equals(nome) || c.getEmail().equals(email) || c.getUsername().equals(username)) {
-                    System.out.println("[REGISTO] Nome, username ou email ja se encontram associados a um utilizador ja existente na base de dados...por favor volte a inserir as suas credencias...");
-                    flag = false;
-                } else {
-                    flag = true;
+            if (clientes != null) {
+                for (ClienteInfo c : clientes) {
+                    if (c.getNome().equals(nome) || c.getEmail().equals(email) || c.getUsername().equals(username) || c.getPorto() == porto) {
+                        System.out.println("[REGISTO] Nome, username ou email ja se encontram associados a um utilizador ja existente na base de dados...por favor volte a inserir as suas credencias...");
+                        flag = false;
+                    }
 
                 }
+            } else {
+                clientes = new ArrayList<>();
             }
             if (flag) {
-                c1 = new ClienteInfo(nome, username, email, password);
+
+                c1 = new ClienteInfo(nome, username, email, password, porto);
                 clientes.add(c1);
-                for (Storage s: barrels) {
+                for (Storage s : barrels) {
                     System.out.println("[REGISTO] Cliente adicionado aos Barrels");
                     StorageBarrel_I sI = (StorageBarrel_I) LocateRegistry.getRegistry(Integer.parseInt(s.getPorto())).lookup("Storage_Barrel");
                     sI.adicionarCliente(c1);
@@ -391,7 +432,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         } catch (NotBoundException e) {
             System.out.println("Erro: " + e);
         }
-
 
 
         return c1;
@@ -428,11 +468,12 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                 for (Storage s : barrels) {
                     if (s.getPorto().equals(porto) && s.getIp().equals(ip)) {
                         flag = false;
-
+                        break;
                     }
                 }
             }
             if (flag) {
+                barrels = new ArrayList<>();
                 barrels.add(new Storage(gama, ip, porto));
             }
         }

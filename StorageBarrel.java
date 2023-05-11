@@ -58,10 +58,10 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
                     //System.out.println("Received packet from " + packet.getAddress().getHostAddress() + ":" + packet.getPort() + " with message:");
                     String message = new String(packet.getData(), 0, packet.getLength());
+
                     String[] protocolo = message.split("\\|");
-                    //System.out.println(message);
+                    System.out.println("[BARREL] Mensagem recebida " + message);
                     if (protocolo[0].equals("1")) {
-                        //System.out.println(message);
                         escreverFichObjetos(message);
                         lerFichObjetos();
                     }
@@ -111,7 +111,7 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
                 try {
                     socket2 = new MulticastSocket();
                     InetAddress enderecoIP = InetAddress.getLocalHost();
-                    String di = "2|" + enderecoIP.getHostAddress() + "|" + porto + "|" + gama_palavra;
+                    String di = "20|" + enderecoIP.getHostAddress() + "|" + porto + "|" + gama_palavra;
                     byte[] buffer2 = di.getBytes();
 
                     InetAddress group2 = InetAddress.getByName(MULTICAST_ADDRESS_2);
@@ -243,10 +243,11 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
     }
 
     public void adicionarCliente(ClienteInfo cliente) throws RemoteException {
-        if (this.clientes != null) {
-            this.clientes.add(cliente);
-            escreverFichClientes();
+        if (this.clientes == null) {
+            clientes = new ArrayList<>();
         }
+        this.clientes.add(cliente);
+        escreverFichClientes();
     }
 
 
@@ -416,7 +417,6 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
 
     public HashSet<String> obterLinks(String url) throws RemoteException {
         urlHashmap = lerFichObjetosHashmap();
-        System.out.println(url + "--- " + urlHashmap.get(url));
         return urlHashmap.get(url);
     }
 
