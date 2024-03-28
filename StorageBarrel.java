@@ -18,7 +18,6 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
     File fClientesObjHashUrl;
     HashMap<String, HashSet<String[]>> index;
     HashMap<String, HashSet<String>> urlHashmap;
-    HashMap<String, Integer> mapaPesquisas;
     ArrayList<ClienteInfo> clientes;
     ArrayList<String> stopwords;
     int type_t;
@@ -31,7 +30,6 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         this.index = new HashMap<>();
         this.urlHashmap = new HashMap<>();
         this.stopwords = new ArrayList<>();
-        this.mapaPesquisas = new HashMap<>();
         this.clientes = new ArrayList<>();
         this.fClientesObj = new File(nome_fich);
         this.fClientesObjHashUrl = new File(nome_fich2);
@@ -140,48 +138,8 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
         return lerFichObjetosHashmap();
     }
 
-    public HashMap<String, Integer> obterPesquisas() throws RemoteException {
-        mapaPesquisas = lerMapaPesquisas();
-        return mapaPesquisas;
-    }
-
-    public void escreverMapaPesquisas(HashMap<String, Integer> mapaPesquisas) {
-        File fich = new File("MapaPesquisas");
-        try {
-            FileOutputStream iOS = new FileOutputStream(fich);
-            ObjectOutputStream oOS = new ObjectOutputStream(iOS);
-
-            oOS.writeObject(mapaPesquisas);
-            oOS.close();
-        } catch (IOException e) {
-            System.out.println("ERRO " + e);
-        }
-
-    }
-
-    public HashMap<String, Integer> lerMapaPesquisas() {
-        HashMap<String, Integer> mapa = null;
-        File fich = new File("MapaPesquisas");
-
-        if (fich.exists()) {
-            try {
-                FileInputStream fIS = new FileInputStream(fich);
-                ObjectInputStream oIS = new ObjectInputStream(fIS);
-                mapa = (HashMap<String, Integer>) oIS.readObject();
-                oIS.close();
 
 
-            } catch (EOFException e) {
-                System.out.print("");
-            } catch (ClassNotFoundException | IOException e) {
-                System.out.println("ERRO " + e);
-            }
-        } else {
-            System.out.println("Ficheiro de Objetos não existe...");
-        }
-        return mapa;
-
-    }
 
     public void escreverFichClientes() {
         File fClientesObj = new File("Objetos - Clientes");
@@ -391,23 +349,6 @@ public class StorageBarrel implements Runnable, StorageBarrel_I, Serializable {
             System.out.println("Ficheiro de Objetos não existe...");
         }
         return palavras;
-    }
-
-    public void adicionarPesquisa(String pesquisa) throws RemoteException {
-        mapaPesquisas = lerMapaPesquisas();
-        if (mapaPesquisas != null) {
-            if (mapaPesquisas.containsKey(pesquisa)) {
-                mapaPesquisas.put(pesquisa, mapaPesquisas.get(pesquisa) + 1);
-            } else {
-                mapaPesquisas.put(pesquisa, 1);
-            }
-        } else {
-            mapaPesquisas = new HashMap<>();
-            mapaPesquisas.put(pesquisa, 1);
-        }
-
-        System.out.println(mapaPesquisas);
-        escreverMapaPesquisas(mapaPesquisas);
     }
 
     public HashSet<String[]> obterInfoBarrel(String palavra) throws RemoteException {

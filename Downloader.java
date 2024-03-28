@@ -20,6 +20,8 @@ public class Downloader implements Runnable {
     private final String MULTICAST_ADDRESS_2 = "224.3.2.2";
     private final int PORT_2 = 4322;
     private HashMap<String, Integer> listaMensagens;
+
+    private ArrayList<Storage> barrels = new ArrayList<>();
     Thread t;
     int type_t;
     String id;

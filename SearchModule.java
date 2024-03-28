@@ -2,7 +2,6 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
-import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.*;
@@ -220,28 +219,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
         return null;
     }
 
-    public HashMap<String, Integer> pesquisasFrequentes() throws RemoteException {
-        HashMap<String, Integer> mapa = new HashMap<>(), aux;
-        try {
-            for (Storage s : barrels) {
-                StorageBarrel_I b = (StorageBarrel_I) LocateRegistry.getRegistry(Integer.parseInt(s.getPorto())).lookup("Storage_Barrel");
-                aux = b.obterPesquisas();
-                for (String cadeia : aux.keySet()) {
-                    if (mapa.containsKey(cadeia)) {
-                        mapa.put(cadeia, aux.get(cadeia) + 1);
-                    } else {
-                        mapa.put(cadeia, aux.get(cadeia));
-
-                    }
-                }
-            }
-        } catch (NotBoundException e) {
-            System.out.println("Erro: " + e);
-        }
-
-        return mapa;
-    }
-
 
     synchronized public HashSet<String[]> pesquisarPaginas(ClienteInfo cliente, String pesquisa) throws RemoteException {
         ArrayList<HashSet<String[]>> lista = new ArrayList<>();
@@ -259,7 +236,6 @@ public class SearchModule extends UnicastRemoteObject implements SearchModule_I,
                     for (Storage s : barrels) {
                         if (flag) {
                             sI = (StorageBarrel_I) LocateRegistry.getRegistry(Integer.parseInt(s.getPorto())).lookup("Storage_Barrel");
-                            sI.adicionarPesquisa(pesquisa);
                             flag = false;
 
                         }

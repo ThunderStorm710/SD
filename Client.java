@@ -1,39 +1,12 @@
 import java.io.*;
-import java.net.*;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.util.*;
 
-public class Client implements Serializable, Runnable {
-
-    transient Thread threadTempoReal;
+public class Client implements Serializable {
 
 
-    public Client() throws RemoteException {
-        threadTempoReal = new Thread(this);
-        threadTempoReal.start();
-    }
 
-
-    public void run() {
-        MulticastSocket socket;
-        String MULTICAST_ADDRESS = "224.3.2.3";
-        int PORT = 1234;
-        try {
-            socket = new MulticastSocket(PORT);  // create socket and bind it
-            InetAddress group = InetAddress.getByName(MULTICAST_ADDRESS);
-            socket.joinGroup(group);
-            while (true) {
-                byte[] buffer = new byte[2048];
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                socket.receive(packet);
-                String message = new String(packet.getData(), 0, packet.getLength());
-                System.out.println(message);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
 
     public static ClienteInfo login(SearchModule_I h) {
@@ -142,51 +115,6 @@ public class Client implements Serializable, Runnable {
         }
     }
 
-    public static void obterInfoGerais(SearchModule_I h) throws RemoteException {
-
-        System.out.println("--- Informacoes gerais do sistema ---");
-        ArrayList<Storage> barrels = h.obterInfoBarrels();
-        ArrayList<DownloaderInfo> downloaders = h.obterInfoDownloaders();
-
-        HashMap<String, Integer> pesquisas = h.pesquisasFrequentes();
-        if (barrels.size() != 0) {
-            System.out.println("--- Storage Barrels ---");
-
-            for (Storage s : barrels) {
-                System.out.println(s);
-            }
-        } else {
-            System.out.println("Nao existem Storage Barrels ativos de momento!");
-        }
-        System.out.println("--- Downloaders ---");
-        if (downloaders.size() != 0) {
-            for (DownloaderInfo d : downloaders) {
-                System.out.println(d);
-            }
-        } else {
-            System.out.println("Nao existem Downloaders ativos de momento!");
-        }
-        if (pesquisas.size() != 0) {
-            List<Map.Entry<String, Integer>> lista = new ArrayList<>(pesquisas.entrySet());
-            lista.sort((o1, o2) -> o2.getValue().compareTo(o1.getValue()));
-
-            HashMap<String, Integer> top10 = new LinkedHashMap<>();
-            int i = 0;
-            for (Map.Entry<String, Integer> entrada : lista) {
-                if (i >= 10) {
-                    break;
-                }
-                top10.put(entrada.getKey(), entrada.getValue());
-                i++;
-            }
-
-            for (String cadeia : top10.keySet()) {
-                System.out.println(cadeia + " ---> " + top10.get(cadeia));
-            }
-        } else {
-            System.out.println("Nao existem pesquisas registadas de momento!");
-        }
-    }
 
     public static void realizarPesquisa(SearchModule_I h, ClienteInfo cliente) throws RemoteException {
         Scanner sc = new Scanner(System.in);
@@ -319,7 +247,6 @@ public class Client implements Serializable, Runnable {
                 }
             }
             if (entrada) {
-                Client c = new Client();
                 label:
                 while (true) {
 
@@ -329,8 +256,7 @@ public class Client implements Serializable, Runnable {
                             \t1 - Indexar novo URL
                             \t2 - Pesquisar
                             \t3 - Consultar lista de paginas
-                            \t4 - Obter Informacoes gerais sobre o sistema
-                            \t5 - Sair
+                            \t4 - Sair
                             -------------------------------------------------
                             """);
 
@@ -350,9 +276,6 @@ public class Client implements Serializable, Runnable {
 
                             break;
                         case "4":
-                            obterInfoGerais(h);
-                            break;
-                        case "5":
                             break label;
 
                         default:
